@@ -14,6 +14,10 @@ class Consumer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
         self.cons_tech_preference = random.choice(['brown', 'green'])
+        self.benefit = 0 #random.uniform(0, 1)  # can make it random for heterogeneous agents
+        self.ext = 0 #random.uniform(0, 1) 
+        self.price_green = 0 
+        self.price_brown = 0
 
     def buy(self):
 
@@ -30,8 +34,18 @@ class Consumer(Agent):
         return random.choice(['brown', 'green'])#self.cons_tech_preference
     
     
-    def cons_payoff(self, ):
+    def cons_payoff(self, tech_preference):
+        if tech_preference == 'green':
+            price = self.price_green
+            ext = self.ext
+        else:
+            price = self.price_brown
+            ext = 0
+        return - price + self.benefit + ext
+    
+    def cons_switch(self, other_consumer):
         return 
+    
     def __str__(self):
         return f"Consumer {self.unique_id}"
     
@@ -39,12 +53,29 @@ class Producer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
         self.prod_tech_preference = random.choice(['brown', 'green'])
+        self.cost_brown = 0
+        self.cost_green = 0 
+        self.tax = 0  
+        self.fixed_cost = 0 
+        self.price_brown = 0  
+        self.price_green = 0
 
     def produce(self):
         return random.choice(['brown', 'green'])#self.prod_tech_preference
     
-    def prod_payoff(self):
-        return
+    def prod_payoff(self, tech_preference):
+        if tech_preference == 'green':
+            price = self.price_green
+            cost = self.cost_green
+            tax = 0 
+        else:
+            price = self.price_brown
+            cost = self.cost_brown
+            tax = self.tax
+        return price - cost - tax - self.fixed_cost
+    
+    def prod_switch(self, other_consumer):
+        return 
     
     def __str__(self):
         return f"Producer {self.unique_id}"
