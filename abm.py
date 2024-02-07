@@ -15,10 +15,10 @@ class Consumer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
         self.cons_tech_preference = random.choice(['brown', 'green'])
-        self.benefit = 0 #random.uniform(0, 1)  # can make it random for heterogeneous agents
-        self.ext = 0 #random.uniform(0, 1) 
-        self.price_green = 0 
-        self.price_brown = 0
+        self.benefit = 10 #random.uniform(0, 1)  # can make it random for heterogeneous agents
+        self.ext = 3 #random.uniform(0, 1) 
+        self.price_green = 10 
+        self.price_brown = 8
         self.payoff = 0
 
     def buy(self):
@@ -47,11 +47,15 @@ class Consumer(Agent):
         return self.payoff
     
     def cons_switch(self, other_consumer):
-        payoff_cons = self.cons_payoff(self.cons_tech_preference)
-        payoff_other_cons = other_consumer.cons_payoff(other_consumer.cons_tech_preference)
+        payoff_cons =  self.payoff #self.cons_payoff(self.cons_tech_preference)
+        payoff_other_cons = other_consumer.payoff #other_consumer.cons_payoff(other_consumer.cons_tech_preference)
+        #print(payoff_cons, payoff_other_cons)
+        #print(self.cons_tech_preference)
                                                        
         if payoff_cons < payoff_other_cons:
+            #print('switch')
             self.cons_tech_preference = other_consumer.cons_tech_preference
+        #print(self.cons_tech_preference)
     
     def __str__(self):
         return f"Consumer {self.unique_id}"
@@ -63,12 +67,12 @@ class Producer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
         self.prod_tech_preference = random.choice(['brown', 'green'])
-        self.cost_brown = 0
-        self.cost_green = 0 
-        self.tax = 0  
-        self.fixed_cost = 0 
-        self.price_brown = 0  
-        self.price_green = 0
+        self.cost_brown = 5
+        self.cost_green = 6 
+        self.tax = 1  
+        self.fixed_cost = 1 
+        self.price_brown = 8  
+        self.price_green = 10
         self.payoff = 0
 
     def produce(self):
@@ -87,16 +91,18 @@ class Producer(Agent):
         return self.payoff
     
     def prod_switch(self, other_producer):
-        payoff_prod = self.prod_payoff(self.cons_tech_preference)
-        payoff_other_prod = other_producer.prod_payoff(other_producer.prod_tech_preference)
-                                                       
+        payoff_prod = self.payoff # self.prod_payoff(self.prod_tech_preference)
+        payoff_other_prod = other_producer.payoff #other_producer.prod_payoff(other_producer.prod_tech_preference)
+        #print(payoff_prod, payoff_other_prod)
+        #print(self.prod_tech_preference)                                               
         if payoff_prod < payoff_other_prod:
-            self.cons_tech_preference = other_producer.prod_tech_preference
+            #print('switch')
+            self.prod_tech_preference = other_producer.prod_tech_preference
+        #print(self.prod_tech_preference)
     
     def __str__(self):
         return f"Producer {self.unique_id}"
     
-
 
 
 # JURISDICTION CLASS
@@ -177,12 +183,12 @@ class Jurisdiction(Model):
         self.total_brown_consumers = 0
         self.total_green_consumers = 0
 
-        
+        random_shuffle = random.shuffle(self.producers) # use instead of 2 lines below
         # Producers produce one product each
         for agent in self.schedule.agents: #change to for agent in consumers....
             #print(agent)
             if isinstance(agent, Producer):
-                product_color = agent.produce()
+                product_color = agent.prod_tech_preference#produce() #change to agent.prod_tech_preference when switching works
                 if product_color == 'brown':
                     self.total_brown_products += 1
                     self.total_brown_producers += 1
@@ -190,15 +196,18 @@ class Jurisdiction(Model):
                     self.total_green_products += 1
                     self.total_green_producers += 1
 
-            agent.payoff = agent.prod_payoff(agent.prod_tech_preference)# update payoff
-        
+                agent.payoff = agent.prod_payoff(agent.prod_tech_preference)# update payoff
+                #print(agent, product_color, agent.payoff)
+        #print('brown producers:',self.total_brown_producers, 'green producers:', self.total_green_producers)
         self.perc_brown_prod = self.total_brown_producers / self.n_producers
         self.perc_green_prod = self.total_green_producers / self.n_producers
+        
+        print(self.total_brown_products, self.total_green_products)
 
         # Consumers buy one product each
         for agent in self.schedule.agents:
             if isinstance(agent, Consumer):
-                product_color = agent.buy()
+                product_color = agent.cons_tech_preference #buy()
                 #print(product_color)
                 if product_color == 'brown':
                     self.total_brown_consumers += 1
@@ -215,27 +224,61 @@ class Jurisdiction(Model):
                     else:
                         agent.payoff = 0 # consumer not able to buy
                     #self.total_green_consumers += 1
-            
-           
+                #print(agent, product_color, agent.payoff)
+        #print('brown consumers:', self.total_brown_consumers, 'green consumers:', self.total_green_consumers)
 
         self.perc_brown_cons = self.total_brown_consumers / self.n_consumers
         self.perc_green_cons = self.total_green_consumers / self.n_consumers
+        print(self.total_brown_products, self.total_green_products)
 
+        # after consumers have bought, subtract from payoff of random producers that havent sold
+        if self.total_brown_products > 0: # check if we have to perform the subtraction for brown
+            brown_producers = [agent for agent in self.producers if agent.prod_tech_preference == 'brown']
+            selected_producers_b = random.sample(brown_producers, self.total_brown_products)
+            for prod in selected_producers_b:
+                prod.payoff -= prod.price_brown
 
-        # Compare welfare and possible swich
-        # iterate over producers and consumers, let them switch, update preference
+        
+        if self.total_green_products > 0: # check if we have to perform the subtraction for green
+            green_producers = [agent for agent in self.producers if agent.prod_tech_preference == 'green']
+            selected_producers_g = random.sample(green_producers, self.total_green_products)
+            for prod in selected_producers_g:
+                prod.payoff -= prod.price_green
+      
+
+        # MAKE SURE TO NOT UPDATE IMMEDIATELY but after going through all agents
+        # Compare payoff and possible switch
+        # iterate over producers and consumers, if they switch -> update preference
         for prod in self.producers:
-            other_prod = random.choice(self.producers)
 
+            # if we work with 1000 consumers, can maybe skip this list to save time. can maybe neglect that 1/1000 agent picks himself
+            other_producers = [pr for pr in self.producers if pr != prod] 
+            other_prod = random.choice(other_producers)
+            #print(prod, 'compares to:', other_prod)
 
+            # CAN DO THE SWITCHING HERE OR IN AGENT CLASS
+            # print(payoff_prod, payoff_other_prod)
+            # print(self.prod_tech_preference) 
+            # if prod.prod_payoff(prod.prod_tech_preference) < other_prod.prod_payoff(other_prod.prod_tech_preference):
+            #     print('switch')
+            #     prod.prod_tech_preference = other_prod.prod_tech_preference
+
+            prod.prod_switch(other_prod)
+
+        for cons in self.consumers:
+            other_consumers = [co for co in self.consumers if co != cons]
+            other_cons = random.choice(other_consumers)
+            #print(cons, 'compares to:', other_cons)
+
+            cons.cons_switch(other_cons)
         
         #super().__init__()
 
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
-    model = Jurisdiction(n_consumers=10, n_producers=10, tax=1)
-    for i in range(5):
+    model = Jurisdiction(n_consumers=10, n_producers=15, tax=1)
+    for i in range(2):
         model.step()
 
     # Retrieve and plot data collected by the DataCollector
