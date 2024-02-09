@@ -222,7 +222,6 @@ class Jurisdiction(Model):
         # Consumers buy one product each
         for agent in shuffled_consumers:
             product_color = agent.cons_tech_preference
-            #print(product_color)
             if product_color == 'brown':
                 self.total_brown_consumers += 1
                 if self.total_brown_products > 0:
@@ -255,45 +254,44 @@ class Jurisdiction(Model):
                 prod.payoff -= prod.price_green
       
 
-        # MAKE SURE TO NOT UPDATE IMMEDIATELY but after going through all agents
-        # Compare payoff and possible switch
-        # iterate over producers and consumers, if they switch -> update preference
-        prod_payoff_diffs = {}
+        # SWITCHING SYSTEM
+                
+        # Compare payoff to random producer and save data for switching
+        prod_payoff_diffs = {} # this will become the probability list
         for prod in self.producers:
-
             # if we work with 1000 consumers, can maybe skip this list to save time. can maybe neglect that 1/1000 agent picks himself
             other_producers = [pr for pr in self.producers if pr != prod] 
             other_prod = random.choice(other_producers)
 
-            prod_payoff_diffs[(prod, other_prod)] = prod.payoff - other_prod.payoff # change to probability later
+            prod_payoff_diffs[prod] = (prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
 
-        #print(prod_payoff_diffs)
-
+        # Do the actual producer switching
         for prod, diff in prod_payoff_diffs.items():
-            if diff < 0: # change to compare probability with number between 0 and 1
-                prod[0].prod_tech_preference = prod[1].prod_tech_preference
-            # CAN DO THE SWITCHING HERE OR IN AGENT CLASS
-            # print(payoff_prod, payoff_other_prod)
-            # print(self.prod_tech_preference) 
-            # if prod.prod_payoff(prod.prod_tech_preference) < other_prod.prod_payoff(other_prod.prod_tech_preference):
-            #     print('switch')
-            #     prod.prod_tech_preference = other_prod.prod_tech_preference
+            if diff[0] < 0: # change to compare probability with number between 0 and 1
+                prod.prod_tech_preference = diff[1]
 
         #    prod.prod_switch(other_prod)
 
+        # Compare payoff to random consumer and save data for switching 
+        cons_payoff_diffs = {}
         for cons in self.consumers:
             other_consumers = [co for co in self.consumers if co != cons]
             other_cons = random.choice(other_consumers)
 
-            cons.cons_switch(other_cons)
-        
+            cons_payoff_diffs[cons] = (cons.payoff - other_cons.payoff, other_cons.cons_tech_preference)
+           # cons.cons_switch(other_cons)
+            
+        # Do the actual consumer switching
+        for cons, diff in cons_payoff_diffs.items():
+            if diff[0] < 0: # change to compare probability with number between 0 and 1
+                cons.cons_tech_preference = diff[1]
         #super().__init__()
 
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
     model = Jurisdiction(n_consumers=8, n_producers=8, tax=1)
-    for i in range(2):
+    for i in range(3):
         model.step()
 
     # Retrieve and plot data collected by the DataCollector
