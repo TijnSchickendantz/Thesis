@@ -92,24 +92,28 @@ class Producer(Agent):
     
     def prod_switch(self, other_producer):
         payoff_prod = self.payoff 
+        print(payoff_prod)
         payoff_other_prod = other_producer.payoff
+        print(payoff_other_prod)
         #payoff_diff = payoff_prod - payoff_other_prod
-        # if self.prod_tech_preference == 'brown' and other_producer.prod_tech_preference == 'green':
-        #     prob = (1 + np.exp(-1* (payoff_other_prod - payoff_prod))) ** - 1 
+        if self.prod_tech_preference == 'brown' and other_producer.prod_tech_preference == 'green':
+            prob = (1 + np.exp(-1 * (payoff_other_prod - payoff_prod))) ** - 1
+            return prob
 
-        # elif self.prod_tech_preference == 'green' and other_producer.prod_tech_preference == 'brown':
-        #     prob = (1 + np.exp(-1* (payoff_prod - payoff_other_prod))) ** - 1
+        elif self.prod_tech_preference == 'green' and other_producer.prod_tech_preference == 'brown':
+            prob = (1 + np.exp(-1 * (payoff_other_prod - payoff_prod))) ** - 1
+            return prob
 
-        # else:
-        #    prob = 0
+        else:
+            return 0
 
         #if prob > random.uniform:
         #    self.prod_tech_preference = other_producer.prod_tech_preference
         #print(payoff_prod, payoff_other_prod)
         #print(self.prod_tech_preference)                                               
-        if payoff_prod < payoff_other_prod:
+        #if payoff_prod < payoff_other_prod:
             #print('switch')
-            self.prod_tech_preference = other_producer.prod_tech_preference
+            #self.prod_tech_preference = other_producer.prod_tech_preference
         #print(self.prod_tech_preference)
     
     def __str__(self):
@@ -143,6 +147,8 @@ class Jurisdiction(Model):
 
         self.perc_brown_cons = 0
         self.perc_green_cons = 0
+
+        self.externality = 0
 
         # Create consumers
         for i in range(n_consumers):
@@ -263,12 +269,18 @@ class Jurisdiction(Model):
             other_producers = [pr for pr in self.producers if pr != prod] 
             other_prod = random.choice(other_producers)
 
-            prod_payoff_diffs[prod] = (prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
+            prod_payoff_diffs[prod] = (prod.prod_switch(other_prod), other_prod.prod_tech_preference)  #(prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
 
         # Do the actual producer switching
-        for prod, diff in prod_payoff_diffs.items():
-            if diff[0] < 0: # change to compare probability with number between 0 and 1
-                prod.prod_tech_preference = diff[1]
+        for prod, probs in prod_payoff_diffs.items():
+            number = random.random()
+            print(prod.prod_tech_preference)
+            print(probs[0])
+            print(number)
+            if probs[0] > number: # change to compare probability with number between 0 and 1
+                print('switch')
+                prod.prod_tech_preference = probs[1]
+                print(prod.prod_tech_preference)
 
         #    prod.prod_switch(other_prod)
 
