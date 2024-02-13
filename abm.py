@@ -6,6 +6,7 @@ from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 import matplotlib.pyplot as plt
 import random
+from tqdm import tqdm
 
 #RandomActivation: Activates each agent once per step, 
 #in random order, with the order reshuffled every step.
@@ -15,10 +16,11 @@ class Consumer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
         self.cons_tech_preference = random.choice(['brown', 'green'])
-        self.benefit = 10 #random.uniform(0, 1)  # can make it random for heterogeneous agents
-        self.ext = 3 #random.uniform(0, 1) 
-        self.price_green = 10 
-        self.price_brown = 8
+        self.benefit = 0.5 #random.uniform(0, 1)  # can make it random for heterogeneous agents
+        self.ext_brown = 0.1 #random.uniform(0, 1) 
+        self.ext_green = 0.3
+        self.price_green = 0.5 
+        self.price_brown = 0.5
         self.payoff = 0
 
     def buy(self):
@@ -28,18 +30,18 @@ class Consumer(Agent):
     def cons_payoff(self, tech_preference):
         if tech_preference == 'green':
             price = self.price_green
-            ext = self.ext
+            ext = self.ext_green
         else:
             price = self.price_brown
-            ext = 0
+            ext = self.ext_brown
         self.payoff = - price + self.benefit + ext
         return self.payoff
     
     def cons_switch(self, other_consumer):
         payoff_cons =  self.payoff 
         payoff_other_cons = other_consumer.payoff
-        print(payoff_cons)
-        print(payoff_other_cons)
+        #print("consumer payoff:",payoff_cons)
+        #print('other consumer payoff:',payoff_other_cons)
         if self.cons_tech_preference == other_consumer.cons_tech_preference:
             return 0
         else:
@@ -60,12 +62,12 @@ class Producer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
         self.prod_tech_preference = random.choice(['brown', 'green'])
-        self.cost_brown = 5
-        self.cost_green = 6 
-        self.tax = 1  
-        self.fixed_cost = 1 
-        self.price_brown = 8  
-        self.price_green = 10
+        self.cost_brown = 0.2
+        self.cost_green = 0.4
+        self.tax = 0  
+        self.fixed_cost = 0 
+        self.price_brown = 0.5  
+        self.price_green = 0.5
         self.payoff = 0
 
     def produce(self):
@@ -85,9 +87,9 @@ class Producer(Agent):
     
     def prod_switch(self, other_producer):
         payoff_prod = self.payoff 
-        #print(payoff_prod)
+        #print('producer payoff:',payoff_prod)
         payoff_other_prod = other_producer.payoff
-        #print(payoff_other_prod)
+        #print('other producer payoff:',payoff_other_prod)
         #payoff_diff = payoff_prod - payoff_other_prod
         if self.prod_tech_preference == other_producer.prod_tech_preference:
             return 0
@@ -151,8 +153,6 @@ class Jurisdiction(Model):
 
         self.consumers = [agent for agent in self.schedule.agents if isinstance(agent, Consumer)]
         self.producers = [agent for agent in self.schedule.agents if isinstance(agent, Producer)]
-        #print(self.consumers)
-        #print(self.producers)
          
         # trackers
         # adoption rate
@@ -252,12 +252,13 @@ class Jurisdiction(Model):
                 
         # Compare payoff to random producer and save data for switching
         prod_payoff_diffs = {} # this will become the probability list
+        prod_factor = self.perc_brown_prod * self.perc_green_prod
         for prod in self.producers:
             # if we work with 1000 consumers, can maybe skip this list to save time. can maybe neglect that 1/1000 agent picks himself
-            other_producers = [pr for pr in self.producers if pr != prod] 
-            other_prod = random.choice(other_producers)
+            #other_producers = [pr for pr in self.producers if pr != prod] 
+            other_prod = random.choice(self.producers)
 
-            prod_payoff_diffs[prod] = (prod.prod_switch(other_prod), other_prod.prod_tech_preference)  #(prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
+            prod_payoff_diffs[prod] = (prod_factor * prod.prod_switch(other_prod), other_prod.prod_tech_preference)  #(prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
 
         # Do the actual producer switching
         for prod, probs in prod_payoff_diffs.items():
@@ -266,38 +267,39 @@ class Jurisdiction(Model):
             # print(probs[0])
             # print(number)
             if probs[0] > number: 
-                #print('switch')
+               # print('switch')
                 prod.prod_tech_preference = probs[1]
-                #print(prod.prod_tech_preference)
+               # print(prod.prod_tech_preference)
 
         #    prod.prod_switch(other_prod)
 
         # Compare payoff to random consumer and save data for switching 
         cons_payoff_diffs = {}
+        cons_factor = self.perc_brown_cons * self.perc_green_cons
         for cons in self.consumers:
-            other_consumers = [co for co in self.consumers if co != cons]
-            other_cons = random.choice(other_consumers)
+            #other_consumers = [co for co in self.consumers if co != cons]
+            other_cons = random.choice(self.consumers)
 
-            cons_payoff_diffs[cons] = (cons.cons_switch(other_cons), other_cons.cons_tech_preference)
+            cons_payoff_diffs[cons] = (cons_factor * cons.cons_switch(other_cons), other_cons.cons_tech_preference)
            # cons.cons_switch(other_cons)
             
         # Do the actual consumer switching
         for cons, probs in cons_payoff_diffs.items():
             number = random.random()
-            print(cons.cons_tech_preference)
-            print(probs[0])
-            print(number)
+            # print(cons.cons_tech_preference)
+            # print(probs[0])
+            # print(number)
             if probs[0] > number:
-                print('switch')
+               # print('switch')
                 cons.cons_tech_preference = probs[1]
-                print(cons.cons_tech_preference)
+                #print(cons.cons_tech_preference)
         #super().__init__()
 
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
-    model = Jurisdiction(n_consumers=8, n_producers=8, tax=1)
-    for i in range(3):
+    model = Jurisdiction(n_consumers=1000, n_producers=800, tax=0)
+    for i in tqdm(range(1000)):
         model.step()
 
     # Retrieve and plot data collected by the DataCollector
@@ -308,30 +310,30 @@ if __name__ == "__main__":
     green_data = model_data.filter(like='Green')
 
     # Create separate plots for brown and green products
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(7, 4))
 
     # Plot brown products
-    plt.subplot(1, 3, 1)
-    for column in brown_data.columns:
-        plt.plot(brown_data[column], label=column)
-    plt.title('Brown Products')
-    plt.xlabel('Steps')
-    plt.ylabel('Count')
-    plt.legend()
-    plt.xticks(range(0, len(brown_data)), map(int, brown_data.index))
+    # plt.subplot(1, 3, 1)
+    # for column in brown_data.columns:
+    #     plt.plot(brown_data[column], label=column)
+    # plt.title('Brown Products')
+    # plt.xlabel('Steps')
+    # plt.ylabel('Count')
+    # plt.legend()
+    # #plt.xticks(range(0, len(brown_data)), map(int, brown_data.index))
 
-    # Plot green products
-    plt.subplot(1, 3, 2)
-    for column in green_data.columns:
-        plt.plot(green_data[column], label=column)
-    plt.title('Green Products')
-    plt.xlabel('Steps')
-    plt.ylabel('Count')
-    plt.legend()
-    plt.xticks(range(0, len(green_data)), map(int, green_data.index))
+    # # Plot green products
+    # plt.subplot(1, 3, 2)
+    # for column in green_data.columns:
+    #     plt.plot(green_data[column], label=column)
+    # plt.title('Green Products')
+    # plt.xlabel('Steps')
+    # plt.ylabel('Count')
+    # plt.legend()
+    #plt.xticks(range(0, len(green_data)), map(int, green_data.index))
 
     # adoption rates
-    plt.subplot(1, 3, 3)
+    # plt.subplot(1, 3, 3)
     #plt.plot(model_data['Percentage brown Producers'], label='Percentage Brown Producers')
     plt.plot(model_data['Percentage green Producers'], label='Percentage Green Producers')
     #plt.plot(model_data['Percentage brown Consumers'], label='Percentage Brown Consumers')
@@ -340,7 +342,7 @@ if __name__ == "__main__":
     plt.xlabel('Steps')
     plt.ylabel('Percentage')
     plt.legend()
-    plt.xticks(range(0, len(model_data)), map(int, model_data.index))
+    #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
 
     plt.tight_layout()
     plt.show()
