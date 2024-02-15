@@ -7,6 +7,7 @@ from mesa.datacollection import DataCollector
 import matplotlib.pyplot as plt
 import random
 from tqdm import tqdm
+from numba import jit
 
 #RandomActivation: Activates each agent once per step, 
 #in random order, with the order reshuffled every step.
@@ -22,6 +23,7 @@ class Consumer(Agent):
         self.price_green = 0.5 
         self.price_brown = 0.5
         self.payoff = 0
+        self.jurisdiction = random.choice([1,2]) # every agent belongs to either jurisdiction
 
     def buy(self):
         return random.choice(['brown', 'green']) # change to self.cons_tech_preference when switching is possible
@@ -36,6 +38,7 @@ class Consumer(Agent):
             ext = self.ext_brown
         self.payoff = - price + self.benefit + ext
         return self.payoff
+    
     
     def cons_switch(self, other_consumer):
         payoff_cons =  self.payoff 
@@ -62,16 +65,18 @@ class Producer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
         self.prod_tech_preference = random.choice(['brown', 'green'])
-        self.cost_brown = 0.2
-        self.cost_green = 0.4
+        self.cost_brown = 0.25
+        self.cost_green = 0.45
         self.tax = 0  
         self.fixed_cost = 0 
         self.price_brown = 0.5  
         self.price_green = 0.5
         self.payoff = 0
+        self.jurisdiction = random.choice([1,2]) # every agent belongs to either jurisdiction
 
     def produce(self):
         return random.choice(['brown', 'green']) # change to self.prod_tech_preference when swithcing is possible
+    
     
     def prod_payoff(self, tech_preference):
         if tech_preference == 'green':
@@ -84,6 +89,7 @@ class Producer(Agent):
             tax = self.tax
         self.payoff = price - cost - tax - self.fixed_cost
         return self.payoff
+    
     
     def prod_switch(self, other_producer):
         payoff_prod = self.payoff 
@@ -138,7 +144,9 @@ class Jurisdiction(Model):
         self.perc_brown_cons = 0
         self.perc_green_cons = 0
 
-        self.externality = 0
+        self.green_externality = 0
+        self.brown_externality = 0
+        self.welfare = 0
 
         # Create consumers
         for i in range(n_consumers):
@@ -153,7 +161,20 @@ class Jurisdiction(Model):
 
         self.consumers = [agent for agent in self.schedule.agents if isinstance(agent, Consumer)]
         self.producers = [agent for agent in self.schedule.agents if isinstance(agent, Producer)]
-         
+
+        self.consumers_j1 = [agent for agent in self.consumers if agent.jurisdiction == 1]
+        self.consumers_j2 = [agent for agent in self.consumers if agent.jurisdiction == 2]
+
+        self.producers_j1 = [agent for agent in self.producers if agent.jurisdiction == 1]
+        self.producers_j2 = [agent for agent in self.producers if agent.jurisdiction == 2]
+
+        
+        # for agent in self.consumers:
+        #     print('consumer:',agent.jurisdiction)
+
+        # for agent in self.producers:
+        #     print('producer:',agent.jurisdiction)
+            
         # trackers
         # adoption rate
         # welfare in jurisdiction
@@ -168,18 +189,21 @@ class Jurisdiction(Model):
                              "Percentage brown Producers": "perc_brown_prod",
                              "Percentage green Producers": "perc_green_prod",
                              "Percentage brown Consumers": "perc_brown_cons",
-                             "Percentage green Consumers": "perc_green_cons"})
+                             "Percentage green Consumers": "perc_green_cons",
+                             "externality":"externality",
+                             "welfare": "welfare"})
         
-
+    
     def step(self):
 
         self.trading_cycle()
         self.datacollector.collect(self)
 
-
+    
     def trading_cycle(self):
 
         # every time we call the step function, we set the total products in the market to 0
+        # need to track this per jurisdiction later...
         self.total_brown_products = 0
         self.total_green_products = 0
 
@@ -189,12 +213,13 @@ class Jurisdiction(Model):
         self.total_brown_consumers = 0
         self.total_green_consumers = 0
 
-        # Random list of producers
-        shuffled_producers = list(self.producers)
-        random.shuffle(shuffled_producers)
+        self.externality = 0
+        self.welfare = 0
+
+
 
         # Producers produce one product each
-        for agent in shuffled_producers:
+        for agent in self.producers:
             product_color = agent.prod_tech_preference
             if product_color == 'brown':
                 self.total_brown_products += 1
@@ -209,7 +234,7 @@ class Jurisdiction(Model):
         self.perc_brown_prod = self.total_brown_producers / self.n_producers
         self.perc_green_prod = self.total_green_producers / self.n_producers
 
-        # Random list of producers
+        # Consumers have to buy in random order
         shuffled_consumers = list(self.consumers)
         random.shuffle(shuffled_consumers)
 
@@ -221,6 +246,7 @@ class Jurisdiction(Model):
                 if self.total_brown_products > 0:
                     self.total_brown_products -= 1
                     agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer is able to buy brown
+                    self.brown_externality += agent.ext_brown
                 else:
                     agent.payoff = 0 # consumer is not able to buy
             if product_color == 'green':
@@ -228,6 +254,7 @@ class Jurisdiction(Model):
                 if self.total_green_products > 0:
                     self.total_green_products -= 1
                     agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer is able to buy green
+                    self.green_externality += agent.ext_green
                 else:
                     agent.payoff = 0 # consumer not able to buy
 
@@ -294,6 +321,16 @@ class Jurisdiction(Model):
                 cons.cons_tech_preference = probs[1]
                 #print(cons.cons_tech_preference)
         #super().__init__()
+
+
+    def jurisdiction_welfare(perc_green_p, perc_green_c, payoffs):
+
+        perc_brown_p = 1 - perc_green_p
+        perc_brown_c = 1 - perc_green_c
+
+        welfare = perc_green_c + perc_green_p + perc_brown_c + perc_brown_p
+        return welfare
+
 
 
 # RUN MODEL AND PRINT OUTPUTS
