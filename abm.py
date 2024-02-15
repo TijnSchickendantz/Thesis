@@ -78,7 +78,7 @@ class Producer(Agent):
         return random.choice(['brown', 'green']) # change to self.prod_tech_preference when swithcing is possible
     
     
-    def prod_payoff(self, tech_preference):
+    def prod_payoff(self, tech_preference, jurisdiction):
         if tech_preference == 'green':
             price = self.price_green
             cost = self.cost_green
@@ -168,12 +168,6 @@ class Jurisdiction(Model):
         self.producers_j1 = [agent for agent in self.producers if agent.jurisdiction == 1]
         self.producers_j2 = [agent for agent in self.producers if agent.jurisdiction == 2]
 
-        
-        # for agent in self.consumers:
-        #     print('consumer:',agent.jurisdiction)
-
-        # for agent in self.producers:
-        #     print('producer:',agent.jurisdiction)
             
         # trackers
         # adoption rate
@@ -215,6 +209,30 @@ class Jurisdiction(Model):
 
         self.externality = 0
         self.welfare = 0
+
+        # calculate market distribution per jurisdiction
+        self.total_brown_products_j1 = len([agent for agent in self.producers_j1 if agent.prod_tech_preference == 'brown'])
+        self.total_green_products_j1 = len([agent for agent in self.producers_j1 if agent.prod_tech_preference == 'green'])
+
+        self.total_brown_producers_j1 = len([agent for agent in self.producers_j1 if agent.prod_tech_preference == 'brown'])
+        self.total_green_producers_j1 = len([agent for agent in self.producers_j1 if agent.prod_tech_preference == 'green'])
+
+        self.total_brown_consumers_j1 = len([agent for agent in self.consumers_j1 if agent.cons_tech_preference == 'brown'])
+        self.total_green_consumers_j1 = len([agent for agent in self.consumers_j1 if agent.cons_tech_preference == 'green'])
+
+        self.total_brown_products_j2 = len([agent for agent in self.producers_j2 if agent.prod_tech_preference == 'brown'])
+        self.total_green_products_j2 = len([agent for agent in self.producers_j2 if agent.prod_tech_preference == 'green'])
+
+        self.total_brown_producers_j2 = len([agent for agent in self.producers_j2 if agent.prod_tech_preference == 'brown'])
+        self.total_green_producers_j2 = len([agent for agent in self.producers_j2 if agent.prod_tech_preference == 'green'])
+
+        self.total_brown_consumers_j2 = len([agent for agent in self.consumers_j2 if agent.cons_tech_preference == 'brown'])
+        self.total_green_consumers_j2 = len([agent for agent in self.consumers_j2 if agent.cons_tech_preference == 'green'])
+
+
+        # for agent in self.producers:
+        #     agent.payoff = agent.prod_payoff(agent.prod_tech_preference, agent.jurisdiction)
+
 
 
 
@@ -335,8 +353,8 @@ class Jurisdiction(Model):
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
-    model = Jurisdiction(n_consumers=1000, n_producers=800, tax=0)
-    for i in tqdm(range(1000)):
+    model = Jurisdiction(n_consumers=10, n_producers=10, tax=0)
+    for i in tqdm(range(1)):
         model.step()
 
     # Retrieve and plot data collected by the DataCollector
