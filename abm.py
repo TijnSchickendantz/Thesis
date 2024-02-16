@@ -82,11 +82,13 @@ class Producer(Agent):
         if tech_preference == 'green':
             price = self.price_green
             cost = self.cost_green
-            tax = 0 
         else:
             price = self.price_brown
             cost = self.cost_brown
+        if tech_preference == 'brown' and jurisdiction == 1:
             tax = self.tax
+        else:
+            tax = 0
         self.payoff = price - cost - tax - self.fixed_cost
         return self.payoff
     
@@ -120,9 +122,10 @@ class Producer(Agent):
 # JURISDICTION CLASS
 class Jurisdiction(Model):
 
-    def __init__(self, n_producers, n_consumers,tax):
+    def __init__(self, n_producers, n_consumers,tax,alpha):
 
         self.tax = tax
+        self.alpha = alpha
         
         self.schedule = RandomActivation(self)
 
@@ -144,8 +147,11 @@ class Jurisdiction(Model):
         self.perc_brown_cons = 0
         self.perc_green_cons = 0
 
-        self.green_externality = 0
-        self.brown_externality = 0
+        self.green_externality_j1 = 0
+        self.brown_externality_j1 = 0
+        self.green_externality_j2 = 0
+        self.brown_externality_j2 = 0
+
         self.welfare = 0
 
         # Create consumers
@@ -207,7 +213,10 @@ class Jurisdiction(Model):
         self.total_brown_consumers = 0
         self.total_green_consumers = 0
 
-        self.externality = 0
+        self.green_externality_j1 = 0
+        self.brown_externality_j1 = 0
+        self.green_externality_j2 = 0
+        self.brown_externality_j2 = 0
         self.welfare = 0
 
         # calculate market distribution per jurisdiction
@@ -230,49 +239,66 @@ class Jurisdiction(Model):
         self.total_green_consumers_j2 = len([agent for agent in self.consumers_j2 if agent.cons_tech_preference == 'green'])
 
 
-        # for agent in self.producers:
-        #     agent.payoff = agent.prod_payoff(agent.prod_tech_preference, agent.jurisdiction)
-
-
-
-
-        # Producers produce one product each
         for agent in self.producers:
-            product_color = agent.prod_tech_preference
-            if product_color == 'brown':
-                self.total_brown_products += 1
-                self.total_brown_producers += 1
-            elif product_color == 'green':
-                self.total_green_products += 1
-                self.total_green_producers += 1
+            agent.payoff = agent.prod_payoff(agent.prod_tech_preference, agent.jurisdiction)
 
-            agent.payoff = agent.prod_payoff(agent.prod_tech_preference)# update payoff
-                #print(agent, product_color, agent.payoff)
-        #print('brown producers:',self.total_brown_producers, 'green producers:', self.total_green_producers)
-        self.perc_brown_prod = self.total_brown_producers / self.n_producers
-        self.perc_green_prod = self.total_green_producers / self.n_producers
 
-        # Consumers have to buy in random order
+        self.perc_brown_prod_j1 = self.total_brown_producers_j1 / len(self.producers_j1)
+        self.perc_green_prod_j1 = self.total_green_producers_j1 / len(self.producers_j1)
+
+        self.perc_brown_prod_j2 = self.total_brown_producers_j2 / len(self.producers_j2)
+        self.perc_green_prod_j2 = self.total_green_producers_j2 / len(self.producers_j2)
+
+
+
+        # # Producers produce one product each
+        # for agent in self.producers:
+        #     product_color = agent.prod_tech_preference
+        #     if product_color == 'brown':
+        #         self.total_brown_products += 1
+        #         self.total_brown_producers += 1
+        #     elif product_color == 'green':
+        #         self.total_green_products += 1
+        #         self.total_green_producers += 1
+
+        #     agent.payoff = agent.prod_payoff(agent.prod_tech_preference)# update payoff
+        #         #print(agent, product_color, agent.payoff)
+        # #print('brown producers:',self.total_brown_producers, 'green producers:', self.total_green_producers)
+        # self.perc_brown_prod = self.total_brown_producers / self.n_producers
+        # self.perc_green_prod = self.total_green_producers / self.n_producers
+
+        # Consumers have to buy in random order, also random between jurisdictions
         shuffled_consumers = list(self.consumers)
         random.shuffle(shuffled_consumers)
 
         # Consumers buy one product each
         for agent in shuffled_consumers:
             product_color = agent.cons_tech_preference
+            juris = agent.jurisdiction
             if product_color == 'brown':
-                self.total_brown_consumers += 1
-                if self.total_brown_products > 0:
-                    self.total_brown_products -= 1
-                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer is able to buy brown
-                    self.brown_externality += agent.ext_brown
+                #self.total_brown_consumers += 1
+                #self.total_brown_consumers_j1 += 1
+                # calculate probability of buying in either jurisdiction here
+                if self.total_brown_products_j1 > 0 and juris == 1:
+                    self.total_brown_products_j1 -= 1
+                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J1 is able to buy brown
+                    self.brown_externality_j1 += agent.ext_brown
+                if self.total_brown_products_j2 > 0 and juris == 2:
+                    self.total_brown_products_j2 -= 1
+                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J2 is able to buy brown
+                    self.brown_externality_j2 += agent.ext_brown
                 else:
                     agent.payoff = 0 # consumer is not able to buy
             if product_color == 'green':
-                self.total_green_consumers += 1
-                if self.total_green_products > 0:
-                    self.total_green_products -= 1
-                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer is able to buy green
-                    self.green_externality += agent.ext_green
+                #self.total_green_consumers += 1
+                if self.total_green_products_j1 > 0 and juris == 1:
+                    self.total_green_products_j1 -= 1
+                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J1 is able to buy green
+                    self.green_externality_j1 += agent.ext_green
+                if self.total_green_products_j2 > 0 and juris == 2:
+                    self.total_green_products_j2 -= 1
+                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J2 is able to buy green
+                    self.green_externality_j2 += agent.ext_green
                 else:
                     agent.payoff = 0 # consumer not able to buy
 
@@ -353,8 +379,8 @@ class Jurisdiction(Model):
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
-    model = Jurisdiction(n_consumers=10, n_producers=10, tax=0)
-    for i in tqdm(range(1)):
+    model = Jurisdiction(n_consumers=30, n_producers=30, tax=0, alpha=0.05)
+    for i in tqdm(range(5)):
         model.step()
 
     # Retrieve and plot data collected by the DataCollector
