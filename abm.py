@@ -174,6 +174,12 @@ class Jurisdiction(Model):
         self.producers_j1 = [agent for agent in self.producers if agent.jurisdiction == 1]
         self.producers_j2 = [agent for agent in self.producers if agent.jurisdiction == 2]
 
+        self.n_consumers_j1 = len(self.consumers_j1)
+        self.n_consumers_j2 = len(self.consumers_j2)
+
+        self.n_producers_j1 = len(self.producers_j1)
+        self.n_producers_j2 = len(self.producers_j2)
+
             
         # trackers
         # adoption rate
@@ -196,11 +202,11 @@ class Jurisdiction(Model):
     
     def step(self):
 
-        self.trading_cycle()
+        self.trading_cycle(self.alpha)
         self.datacollector.collect(self)
 
     
-    def trading_cycle(self):
+    def trading_cycle(self,alpha):
 
         # every time we call the step function, we set the total products in the market to 0
         # need to track this per jurisdiction later...
@@ -243,11 +249,17 @@ class Jurisdiction(Model):
             agent.payoff = agent.prod_payoff(agent.prod_tech_preference, agent.jurisdiction)
 
 
-        self.perc_brown_prod_j1 = self.total_brown_producers_j1 / len(self.producers_j1)
-        self.perc_green_prod_j1 = self.total_green_producers_j1 / len(self.producers_j1)
+        self.perc_brown_prod_j1 = self.total_brown_producers_j1 / self.n_producers_j1
+        self.perc_green_prod_j1 = self.total_green_producers_j1 / self.n_producers_j1
 
-        self.perc_brown_prod_j2 = self.total_brown_producers_j2 / len(self.producers_j2)
-        self.perc_green_prod_j2 = self.total_green_producers_j2 / len(self.producers_j2)
+        self.perc_brown_prod_j2 = self.total_brown_producers_j2 / self.n_producers_j2
+        self.perc_green_prod_j2 = self.total_green_producers_j2 / self.n_producers_j2
+
+        self.perc_brown_cons_j1 = self.total_brown_consumers_j1 / self.n_consumers_j1
+        self.perc_green_cons_j1 = self.total_green_consumers_j1 / self.n_consumers_j1
+
+        self.perc_brown_cons_j2 = self.total_brown_consumers_j2 / self.n_consumers_j2
+        self.perc_green_cons_j2 = self.total_green_consumers_j2 / self.n_consumers_j2
 
 
 
@@ -271,14 +283,50 @@ class Jurisdiction(Model):
         shuffled_consumers = list(self.consumers)
         random.shuffle(shuffled_consumers)
 
-        # Consumers buy one product each
+        # Consumers buy one product each if possible
         for agent in shuffled_consumers:
             product_color = agent.cons_tech_preference
             juris = agent.jurisdiction
+            # if product_color == 'brown' and self.total_brown_products_j1 != 0 and self.total_brown_products_j2 != 0:
+            #     if juris == 1:
+            #         prob_j1 = self.total_brown_products_j1 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+            #         #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+            #         if prob_j1 > random.random():
+            #             self.total_brown_products_j1 -= 1
+            #         else:
+            #             self.total_brown_products_j2 -= 1
+            #     if juris == 2:
+            #         prob_j2 = self.total_brown_products_j2 / (alpha* self.total_brown_products_j1 + self.total_brown_products_j2)
+            #         if prob_j2 > random.random():
+            #             self.total_brown_products_j2 -= 1
+            #         else:
+            #             self.total_brown_products_j1 -= 1
+
+            #     agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
+
+            # if product_color == 'green' and self.total_green_products_j1 != 0 and self.total_green_products_j2 != 0:
+            #     if juris == 1:
+            #         prob_j1 = self.total_green_products_j1 / (self.total_green_products_j1 + alpha * self.total_green_products_j2)
+            #         #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+            #         if prob_j1 > random.random():
+            #             self.total_green_products_j1 -= 1
+            #         else:
+            #             self.total_green_products_j2 -= 1
+            #     if juris == 2:
+            #         prob_j2 = self.total_green_products_j2 / (alpha* self.total_green_products_j1 + self.total_green_products_j2)
+            #         if prob_j2 > random.random():
+            #             self.total_green_products_j2 -= 1
+            #         else:
+            #             self.total_green_products_j1 -= 1
+
+            #     agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
+
+            # else:
+            #     agent.payoff = 0
+                
+
+            # this code is for first depleting local    
             if product_color == 'brown':
-                #self.total_brown_consumers += 1
-                #self.total_brown_consumers_j1 += 1
-                # calculate probability of buying in either jurisdiction here
                 if self.total_brown_products_j1 > 0 and juris == 1:
                     self.total_brown_products_j1 -= 1
                     agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J1 is able to buy brown
@@ -302,20 +350,34 @@ class Jurisdiction(Model):
                 else:
                     agent.payoff = 0 # consumer not able to buy
 
-        self.perc_brown_cons = self.total_brown_consumers / self.n_consumers
-        self.perc_green_cons = self.total_green_consumers / self.n_consumers
+        # Let global consumers buy what is left in the other jurisdiction
+        
+
 
         # after consumers have bought, subtract from payoff of random producers that havent sold
-        if self.total_brown_products > 0: # check if we have to perform the subtraction for brown
-            brown_producers = [agent for agent in self.producers if agent.prod_tech_preference == 'brown']
-            selected_producers_b = random.sample(brown_producers, self.total_brown_products)
-            for prod in selected_producers_b:
-                prod.payoff -= prod.price_brown
+        if self.total_brown_products_j1 > 0: # check if we have to perform the subtraction for brown J1
+            brown_producers = [agent for agent in self.producers_j1 if agent.prod_tech_preference == 'brown']
+            selected_producers_b1 = random.sample(brown_producers, self.total_brown_products_j1)
+            for prod in selected_producers_b1:
+                prod.payoff -= (prod.price_brown - prod.tax) # they dont pay tax if they dont sell the product?
 
-        if self.total_green_products > 0: # check if we have to perform the subtraction for green
-            green_producers = [agent for agent in self.producers if agent.prod_tech_preference == 'green']
-            selected_producers_g = random.sample(green_producers, self.total_green_products)
-            for prod in selected_producers_g:
+        if self.total_brown_products_j2 > 0: # check if we have to perform the subtraction for brown J2
+            brown_producers = [agent for agent in self.producers_j2 if agent.prod_tech_preference == 'brown']
+            selected_producers_b2 = random.sample(brown_producers, self.total_brown_products_j2)
+            for prod in selected_producers_b2:
+                prod.payoff -= prod.price_brown # only tax for jurisdiction 1
+                
+
+        if self.total_green_products_j1 > 0: # check if we have to perform the subtraction for green J1
+            green_producers = [agent for agent in self.producers_j1 if agent.prod_tech_preference == 'green']
+            selected_producers_g1 = random.sample(green_producers, self.total_green_products_j1)
+            for prod in selected_producers_g1:
+                prod.payoff -= prod.price_green
+
+        if self.total_green_products_j2 > 0: # check if we have to perform the subtraction for green J2
+            green_producers = [agent for agent in self.producers_j2 if agent.prod_tech_preference == 'green']
+            selected_producers_g2 = random.sample(green_producers, self.total_green_products_j2)
+            for prod in selected_producers_g2:
                 prod.payoff -= prod.price_green
       
 
