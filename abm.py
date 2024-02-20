@@ -122,10 +122,12 @@ class Producer(Agent):
 # JURISDICTION CLASS
 class Jurisdiction(Model):
 
-    def __init__(self, n_producers, n_consumers,tax,alpha):
+    def __init__(self, n_producers, n_consumers,tax,alpha,beta,gamma):
 
         self.tax = tax
         self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
         
         self.schedule = RandomActivation(self)
 
@@ -196,6 +198,14 @@ class Jurisdiction(Model):
                              "Percentage green Producers": "perc_green_prod",
                              "Percentage brown Consumers": "perc_brown_cons",
                              "Percentage green Consumers": "perc_green_cons",
+                             "Percentage brown Producers J1": "perc_brown_prod_j1",
+                             "Percentage green Producers J1": "perc_green_prod_j1",
+                             "Percentage brown Producers J2": "perc_brown_prod_j2",
+                             "Percentage green Producers J2": "perc_green_prod_j2",
+                             "Percentage brown Consumers J1": "perc_brown_cons_j1",
+                             "Percentage green Consumers J1": "perc_green_cons_j1",
+                             "Percentage brown Consumers J2": "perc_brown_cons_j2",
+                             "Percentage green Consumers J2": "perc_green_cons_j2",
                              "externality":"externality",
                              "welfare": "welfare"})
         
@@ -282,10 +292,6 @@ class Jurisdiction(Model):
         # Consumers have to buy in random order, also random between jurisdictions
         shuffled_consumers = list(self.consumers)
         random.shuffle(shuffled_consumers)
-        print('j1B:',self.total_brown_products_j1, self.total_brown_consumers_j1)
-        print('j2B:',self.total_brown_products_j2, self.total_brown_consumers_j2)
-        print('j1G:',self.total_green_products_j1, self.total_green_consumers_j1)
-        print('j2G:',self.total_green_products_j2, self.total_green_consumers_j2)
 
         # Consumers buy one product each if possible
         for agent in shuffled_consumers:
@@ -353,11 +359,6 @@ class Jurisdiction(Model):
                     self.green_externality_j2 += agent.ext_green
                 else:
                     agent.payoff = 0 # consumer not able to buy
-            #print(agent.payoff)
-        print('j1B:',self.total_brown_products_j1)
-        print('j2B:',self.total_brown_products_j2)
-        print('j1G:',self.total_green_products_j1)
-        print('j2G:',self.total_green_products_j2)
 
         # Let global consumers buy what is left in the other jurisdiction
         if self.total_brown_products_j2 > 0:
@@ -436,17 +437,30 @@ class Jurisdiction(Model):
         # SWITCHING SYSTEM
                 
         # Compare payoff to random producer and save data for switching
-        prod_payoff_diffs = {} # this will become the probability list
-        prod_factor = self.perc_brown_prod * self.perc_green_prod
+        prod_probs = {}
+        prod_factor_j1_bg = self.perc_brown_prod_j1 * ((self.total_green_producers_j1 + self.beta * self.total_green_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2))
+        prod_factor_j1_gb = self.perc_green_prod_j2 * ((self.total_brown_producers_j1 + self.beta * self.total_brown_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2))
+        prod_factor_j2_bg = self.perc_brown_prod_j2 * ((self.total_green_producers_j2 + self.beta * self.total_green_producers_j1) / (self.n_producers_j2 + self.beta * self.n_producers_j1))
+        prod_factor_j2_gb = self.perc_brown_prod_j2 * ((self.total_green_producers_j2 + self.beta * self.total_green_producers_j1) / (self.n_producers_j2 + self.beta * self.n_producers_j1))
         for prod in self.producers:
-            # if we work with 1000 consumers, can maybe skip this list to save time. can maybe neglect that 1/1000 agent picks himself
             #other_producers = [pr for pr in self.producers if pr != prod] 
-            other_prod = random.choice(self.producers)
+            if prod.jurisdiction == 1:
+                other_prod = random.choice(self.producers_j1)
+                if prod.prod_tech_preference == 'brown':
+                    factor = prod_factor_j1_bg
+                else:
+                    factor = prod_factor_j1_gb
+            elif prod.jurisdiction == 2:
+                other_prod = random.choice(self.producers_j2)
+                if prod.prod_tech_preference == 'brown':
+                    factor = prod_factor_j2_bg
+                else:
+                    factor = prod_factor_j2_gb
 
-            prod_payoff_diffs[prod] = (prod_factor * prod.prod_switch(other_prod), other_prod.prod_tech_preference)  #(prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
+            prod_probs[prod] = (factor * prod.prod_switch(other_prod), other_prod.prod_tech_preference)  #(prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
 
         # Do the actual producer switching
-        for prod, probs in prod_payoff_diffs.items():
+        for prod, probs in prod_probs.items():
             number = random.random()
             # print(prod.prod_tech_preference)
             # print(probs[0])
@@ -459,17 +473,31 @@ class Jurisdiction(Model):
         #    prod.prod_switch(other_prod)
 
         # Compare payoff to random consumer and save data for switching 
-        cons_payoff_diffs = {}
-        cons_factor = self.perc_brown_cons * self.perc_green_cons
+        cons_probs = {}
+        cons_factor_j1_bg = self.perc_brown_cons_j1 * ((self.total_green_consumers_j1 + self.gamma * self.total_green_consumers_j2) / (self.n_consumers_j1 + self.beta * self.n_consumers_j2))
+        cons_factor_j1_gb = self.perc_green_cons_j1 * ((self.total_brown_consumers_j1 + self.gamma * self.total_brown_consumers_j2) / (self.n_consumers_j1 + self.beta * self.n_consumers_j2))
+        cons_factor_j2_bg = self.perc_brown_cons_j2 * ((self.total_green_consumers_j2 + self.gamma * self.total_green_consumers_j1) / (self.n_consumers_j2 + self.beta * self.n_consumers_j1))
+        cons_factor_j2_gb = self.perc_brown_cons_j2 * ((self.total_green_consumers_j2 + self.gamma * self.total_green_consumers_j1) / (self.n_consumers_j2 + self.beta * self.n_consumers_j1))
         for cons in self.consumers:
-            #other_consumers = [co for co in self.consumers if co != cons]
-            other_cons = random.choice(self.consumers)
+            if cons.jurisdiction == 1:
+                other_cons = random.choice(self.consumers_j1)
+                if cons.cons_tech_preference == 'brown':
+                    factor = cons_factor_j1_bg
+                else:
+                    factor = cons_factor_j1_gb
+            elif cons.jurisdiction == 2:
+                other_cons = random.choice(self.consumers_j2)
+                if cons.cons_tech_preference == 'brown':
+                    factor = cons_factor_j2_bg
+                else:
+                    factor = cons_factor_j2_gb
 
-            cons_payoff_diffs[cons] = (cons_factor * cons.cons_switch(other_cons), other_cons.cons_tech_preference)
+
+            cons_probs[cons] = (factor * cons.cons_switch(other_cons), other_cons.cons_tech_preference)
            # cons.cons_switch(other_cons)
             
         # Do the actual consumer switching
-        for cons, probs in cons_payoff_diffs.items():
+        for cons, probs in cons_probs.items():
             number = random.random()
             # print(cons.cons_tech_preference)
             # print(probs[0])
@@ -493,16 +521,16 @@ class Jurisdiction(Model):
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
-    model = Jurisdiction(n_consumers=40, n_producers=40, tax=0, alpha=0.5)
-    for i in tqdm(range(2)):
+    model = Jurisdiction(n_consumers=2000, n_producers=1000, tax=0, alpha=0, beta=0, gamma=0)
+    for i in tqdm(range(1000)):
         model.step()
 
     # Retrieve and plot data collected by the DataCollector
     model_data = model.datacollector.get_model_vars_dataframe()
     #print(model_data)
     # Separate data for brown and green products
-    brown_data = model_data.filter(like='Brown')
-    green_data = model_data.filter(like='Green')
+    #brown_data = model_data.filter(like='Brown')
+    #green_data = model_data.filter(like='Green')
 
     # Create separate plots for brown and green products
     plt.figure(figsize=(7, 4))
@@ -530,9 +558,10 @@ if __name__ == "__main__":
     # adoption rates
     # plt.subplot(1, 3, 3)
     #plt.plot(model_data['Percentage brown Producers'], label='Percentage Brown Producers')
-    plt.plot(model_data['Percentage green Producers'], label='Percentage Green Producers')
-    #plt.plot(model_data['Percentage brown Consumers'], label='Percentage Brown Consumers')
-    plt.plot(model_data['Percentage green Consumers'], label='Percentage Green Consumers')
+    plt.plot(model_data['Percentage green Producers J1'], label='Percentage Green Producers J1', color='indianred')
+    plt.plot(model_data['Percentage green Consumers J1'], label='Percentage Green Consumers J1', color='darkred')
+    plt.plot(model_data['Percentage green Producers J2'], label='Percentage Green Producers J2', color='deepskyblue')
+    plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
     plt.title('Adoption of green tech')
     plt.xlabel('Steps')
     plt.ylabel('Percentage')
