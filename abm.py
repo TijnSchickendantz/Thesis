@@ -427,7 +427,7 @@ class Jurisdiction(Model):
         prod_factor_j1_bg = self.perc_brown_prod_j1 * ((self.total_green_producers_j1 + self.beta * self.total_green_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2))
         prod_factor_j1_gb = self.perc_green_prod_j2 * ((self.total_brown_producers_j1 + self.beta * self.total_brown_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2))
         prod_factor_j2_bg = self.perc_brown_prod_j2 * ((self.total_green_producers_j2 + self.beta * self.total_green_producers_j1) / (self.n_producers_j2 + self.beta * self.n_producers_j1))
-        prod_factor_j2_gb = self.perc_brown_prod_j2 * ((self.total_green_producers_j2 + self.beta * self.total_green_producers_j1) / (self.n_producers_j2 + self.beta * self.n_producers_j1))
+        prod_factor_j2_gb = self.perc_green_prod_j2 * ((self.total_brown_producers_j2 + self.beta * self.total_brown_producers_j1) / (self.n_producers_j2 + self.beta * self.n_producers_j1))
         for prod in self.producers:
             #other_producers = [pr for pr in self.producers if pr != prod] 
             if prod.jurisdiction == 1:
@@ -457,7 +457,7 @@ class Jurisdiction(Model):
         cons_factor_j1_bg = self.perc_brown_cons_j1 * ((self.total_green_consumers_j1 + self.gamma * self.total_green_consumers_j2) / (self.n_consumers_j1 + self.gamma * self.n_consumers_j2))
         cons_factor_j1_gb = self.perc_green_cons_j1 * ((self.total_brown_consumers_j1 + self.gamma * self.total_brown_consumers_j2) / (self.n_consumers_j1 + self.gamma * self.n_consumers_j2))
         cons_factor_j2_bg = self.perc_brown_cons_j2 * ((self.total_green_consumers_j2 + self.gamma * self.total_green_consumers_j1) / (self.n_consumers_j2 + self.gamma * self.n_consumers_j1))
-        cons_factor_j2_gb = self.perc_brown_cons_j2 * ((self.total_green_consumers_j2 + self.gamma * self.total_green_consumers_j1) / (self.n_consumers_j2 + self.gamma * self.n_consumers_j1))
+        cons_factor_j2_gb = self.perc_green_cons_j2 * ((self.total_brown_consumers_j2 + self.gamma * self.total_brown_consumers_j1) / (self.n_consumers_j2 + self.gamma * self.n_consumers_j1))
         for cons in self.consumers:
             if cons.jurisdiction == 1:
                 other_cons = random.choice(self.consumers_j1)
@@ -496,7 +496,7 @@ class Jurisdiction(Model):
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
-    model = Jurisdiction(n_consumers=1500, n_producers=750, tax=0, alpha=0.1, beta=0, gamma=0)
+    model = Jurisdiction(n_consumers=1500, n_producers=1500, tax=0, alpha=0.01, beta=0, gamma=0)
     for i in tqdm(range(1000)):
         model.step()
 
