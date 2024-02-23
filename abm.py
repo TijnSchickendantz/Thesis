@@ -16,7 +16,7 @@ from numba import jit
 class Consumer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
-        self.cons_tech_preference = random.choice(['brown', 'green'])
+        self.cons_tech_preference = random.choices(['brown', 'green'], weights=[5, 5])[0]
         self.benefit = 0.5 #random.uniform(0, 1)  # can make it random for heterogeneous agents
         self.ext_brown = 0.1 #random.uniform(0, 1) 
         self.ext_green = 0.3
@@ -43,18 +43,12 @@ class Consumer(Agent):
     def cons_switch(self, other_consumer):
         payoff_cons =  self.payoff 
         payoff_other_cons = other_consumer.payoff
-        #print("consumer payoff:",payoff_cons)
-        #print('other consumer payoff:',payoff_other_cons)
         if self.cons_tech_preference == other_consumer.cons_tech_preference:
             return 0
         else:
             return (1 + np.exp(-1 * (payoff_other_cons - payoff_cons))) ** - 1
                                                        
-        #if payoff_cons < payoff_other_cons:
-            #print('switch')
-            #self.cons_tech_preference = other_consumer.cons_tech_preference
-        #print(self.cons_tech_preference)
-    
+
     def __str__(self):
         return f"Consumer {self.unique_id}"
     
@@ -64,10 +58,10 @@ class Consumer(Agent):
 class Producer(Agent):
     def __init__(self, unique_id, model):#, tech_preference):
         super().__init__(unique_id, model)
-        self.prod_tech_preference = random.choice(['brown', 'green'])
+        self.prod_tech_preference = random.choices(['brown', 'green'], weights=[5, 5])[0]
         self.cost_brown = 0.25
         self.cost_green = 0.45
-        self.tax = 0  
+        self.tax = 0
         self.fixed_cost = 0 
         self.price_brown = 0.5  
         self.price_green = 0.5
@@ -95,23 +89,11 @@ class Producer(Agent):
     
     def prod_switch(self, other_producer):
         payoff_prod = self.payoff 
-        #print('producer payoff:',payoff_prod)
         payoff_other_prod = other_producer.payoff
-        #print('other producer payoff:',payoff_other_prod)
-        #payoff_diff = payoff_prod - payoff_other_prod
         if self.prod_tech_preference == other_producer.prod_tech_preference:
             return 0
-        
         else:
             return (1 + np.exp(-1 * (payoff_other_prod - payoff_prod))) ** - 1
-       
-        # if self.prod_tech_preference == 'brown' and other_producer.prod_tech_preference == 'green':
-        #     prob = (1 + np.exp(-1 * (payoff_other_prod - payoff_prod))) ** - 1
-        #     return prob
-
-        # elif self.prod_tech_preference == 'green' and other_producer.prod_tech_preference == 'brown':
-        #     prob = (1 + np.exp(-1 * (payoff_other_prod - payoff_prod))) ** - 1
-        #     return prob
 
     
     def __str__(self):
@@ -297,114 +279,118 @@ class Jurisdiction(Model):
         for agent in shuffled_consumers:
             product_color = agent.cons_tech_preference
             juris = agent.jurisdiction
-            # if product_color == 'brown' and self.total_brown_products_j1 != 0 and self.total_brown_products_j2 != 0:
-            #     if juris == 1:
-            #         prob_j1 = self.total_brown_products_j1 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
-            #         #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
-            #         if prob_j1 > random.random():
-            #             self.total_brown_products_j1 -= 1
-            #         else:
-            #             self.total_brown_products_j2 -= 1
-            #     if juris == 2:
-            #         prob_j2 = self.total_brown_products_j2 / (alpha* self.total_brown_products_j1 + self.total_brown_products_j2)
-            #         if prob_j2 > random.random():
-            #             self.total_brown_products_j2 -= 1
-            #         else:
-            #             self.total_brown_products_j1 -= 1
+            if product_color == 'brown' and (self.total_brown_products_j1 != 0 or self.total_brown_products_j2 != 0):
+                if juris == 1:
+                    #print('brown 1')
+                    prob_j1 = self.total_brown_products_j1 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+                    #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+                    if prob_j1 > random.random():
+                        self.total_brown_products_j1 -= 1
+                    else:
+                        self.total_brown_products_j2 -= 1
+                if juris == 2:
+                    #print('brown 2')
+                    prob_j2 = self.total_brown_products_j2 / (alpha* self.total_brown_products_j1 + self.total_brown_products_j2)
+                    if prob_j2 > random.random():
+                        self.total_brown_products_j2 -= 1
+                    else:
+                        self.total_brown_products_j1 -= 1
 
-            #     agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
+                agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
 
-            # if product_color == 'green' and self.total_green_products_j1 != 0 and self.total_green_products_j2 != 0:
-            #     if juris == 1:
-            #         prob_j1 = self.total_green_products_j1 / (self.total_green_products_j1 + alpha * self.total_green_products_j2)
-            #         #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
-            #         if prob_j1 > random.random():
-            #             self.total_green_products_j1 -= 1
-            #         else:
-            #             self.total_green_products_j2 -= 1
-            #     if juris == 2:
-            #         prob_j2 = self.total_green_products_j2 / (alpha* self.total_green_products_j1 + self.total_green_products_j2)
-            #         if prob_j2 > random.random():
-            #             self.total_green_products_j2 -= 1
-            #         else:
-            #             self.total_green_products_j1 -= 1
+            elif product_color == 'green' and (self.total_green_products_j1 != 0 or self.total_green_products_j2 != 0):
+                if juris == 1:
+                    #print('green 1')
+                    prob_j1 = self.total_green_products_j1 / (self.total_green_products_j1 + alpha * self.total_green_products_j2)
+                    #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+                    if prob_j1 > random.random():
+                        self.total_green_products_j1 -= 1
+                    else:
+                        self.total_green_products_j2 -= 1
+                if juris == 2:
+                    #print('green 2')
+                    prob_j2 = self.total_green_products_j2 / (alpha* self.total_green_products_j1 + self.total_green_products_j2)
+                    if prob_j2 > random.random():
+                        self.total_green_products_j2 -= 1
+                    else:
+                        self.total_green_products_j1 -= 1
 
-            #     agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
+                agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
 
-            # else:
-            #     agent.payoff = 0
+            else:
+                agent.payoff = 0
                 
 
-            # this code is for first depleting local    
-            if product_color == 'brown':
-                if self.total_brown_products_j1 > 0 and juris == 1:
-                    self.total_brown_products_j1 -= 1
-                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J1 is able to buy brown
-                    self.brown_externality_j1 += agent.ext_brown
-                elif self.total_brown_products_j2 > 0 and juris == 2:
-                    self.total_brown_products_j2 -= 1
-                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J2 is able to buy brown
-                    self.brown_externality_j2 += agent.ext_brown
-                else:
-                    agent.payoff = 0 # consumer is not able to buy
-            if product_color == 'green':
-                #self.total_green_consumers += 1
-                if self.total_green_products_j1 > 0 and juris == 1:
-                    self.total_green_products_j1 -= 1
-                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J1 is able to buy green
-                    self.green_externality_j1 += agent.ext_green
-                elif self.total_green_products_j2 > 0 and juris == 2:
-                    self.total_green_products_j2 -= 1
-                    agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J2 is able to buy green
-                    self.green_externality_j2 += agent.ext_green
-                else:
-                    agent.payoff = 0 # consumer not able to buy
-
+            # this code is for first depleting local supply
+            # if product_color == 'brown':
+            #     if self.total_brown_products_j1 > 0 and juris == 1:
+            #         self.total_brown_products_j1 -= 1
+            #         agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J1 is able to buy brown
+            #         self.brown_externality_j1 += agent.ext_brown
+            #     elif self.total_brown_products_j2 > 0 and juris == 2:
+            #         self.total_brown_products_j2 -= 1
+            #         agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J2 is able to buy brown
+            #         self.brown_externality_j2 += agent.ext_brown
+            #     else:
+            #         agent.payoff = 0 # consumer is not able to buy
+            # if product_color == 'green':
+            #     #self.total_green_consumers += 1
+            #     if self.total_green_products_j1 > 0 and juris == 1:
+            #         self.total_green_products_j1 -= 1
+            #         agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J1 is able to buy green
+            #         self.green_externality_j1 += agent.ext_green
+            #     elif self.total_green_products_j2 > 0 and juris == 2:
+            #         self.total_green_products_j2 -= 1
+            #         agent.payoff = agent.cons_payoff(agent.cons_tech_preference) # consumer in J2 is able to buy green
+            #         self.green_externality_j2 += agent.ext_green
+            #     else:
+            #         agent.payoff = 0 # consumer not able to buy
+        
         # Let global consumers buy what is left in the other jurisdiction
-        if self.total_brown_products_j2 > 0:
-            poss_cons_j1b = [agent for agent in self.consumers_j1 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
-            amount_j1b = int(alpha * len(poss_cons_j1b))
-            subset_j1b = random.sample(poss_cons_j1b, amount_j1b)
-            if len(subset_j1b) != 0:
-                for cons in subset_j1b:
-                    if self.total_brown_products_j2 == 0:
-                        break  
-                    self.total_brown_products_j2 -= 1
-                    cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
+        # if self.total_brown_products_j2 > 0:
+        #     poss_cons_j1b = [agent for agent in self.consumers_j1 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
+        #     amount_j1b = int(alpha * len(poss_cons_j1b))
+        #     subset_j1b = random.sample(poss_cons_j1b, amount_j1b)
+        #     if len(subset_j1b) != 0:
+        #         for cons in subset_j1b:
+        #             if self.total_brown_products_j2 == 0:
+        #                 break  
+        #             self.total_brown_products_j2 -= 1
+        #             cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
 
-        if self.total_brown_products_j1 > 0:
-            poss_cons_j2b = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
-            amount_j2b = int(alpha * len(poss_cons_j2b))
-            subset_j2b = random.sample(poss_cons_j2b, amount_j2b)
-            if len(subset_j2b) != 0:
-                for cons in subset_j2b:
-                    if self.total_brown_products_j1 == 0:
-                        break  
-                    self.total_brown_products_j1 -= 1
-                    cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
+        # if self.total_brown_products_j1 > 0:
+        #     poss_cons_j2b = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
+        #     amount_j2b = int(alpha * len(poss_cons_j2b))
+        #     subset_j2b = random.sample(poss_cons_j2b, amount_j2b)
+        #     if len(subset_j2b) != 0:
+        #         for cons in subset_j2b:
+        #             if self.total_brown_products_j1 == 0:
+        #                 break  
+        #             self.total_brown_products_j1 -= 1
+        #             cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
             
 
-        if self.total_green_products_j2 > 0:
-            poss_cons_j1g = [agent for agent in self.consumers_j1 if agent.payoff == 0 and agent.cons_tech_preference == 'green']
-            amount_j1g = int(alpha * len(poss_cons_j1g))
-            subset_j1g = random.sample(poss_cons_j1g, amount_j1g)
-            if len(subset_j1g) != 0:
-                for cons in subset_j1g:
-                    if self.total_green_products_j2 == 0:
-                        break  
-                    self.total_green_products_j2 -= 1
-                    cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
+        # if self.total_green_products_j2 > 0:
+        #     poss_cons_j1g = [agent for agent in self.consumers_j1 if agent.payoff == 0 and agent.cons_tech_preference == 'green']
+        #     amount_j1g = int(alpha * len(poss_cons_j1g))
+        #     subset_j1g = random.sample(poss_cons_j1g, amount_j1g)
+        #     if len(subset_j1g) != 0:
+        #         for cons in subset_j1g:
+        #             if self.total_green_products_j2 == 0:
+        #                 break  
+        #             self.total_green_products_j2 -= 1
+        #             cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
 
-        if self.total_green_products_j1 > 0:
-            poss_cons_j2g = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'green']
-            amount_j2g = int(alpha * len(poss_cons_j2g))
-            subset_j2g = random.sample(poss_cons_j2g, amount_j2g)
-            if len(subset_j2g) != 0:
-                for cons in subset_j2g:
-                    if self.total_green_products_j1 == 0:
-                        break  
-                    self.total_green_products_j1 -= 1
-                    cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
+        # if self.total_green_products_j1 > 0:
+        #     poss_cons_j2g = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'green']
+        #     amount_j2g = int(alpha * len(poss_cons_j2g))
+        #     subset_j2g = random.sample(poss_cons_j2g, amount_j2g)
+        #     if len(subset_j2g) != 0:
+        #         for cons in subset_j2g:
+        #             if self.total_green_products_j1 == 0:
+        #                 break  
+        #             self.total_green_products_j1 -= 1
+        #             cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
 
 
         # after consumers have bought, subtract from payoff of random producers that havent sold
@@ -462,22 +448,16 @@ class Jurisdiction(Model):
         # Do the actual producer switching
         for prod, probs in prod_probs.items():
             number = random.random()
-            # print(prod.prod_tech_preference)
-            # print(probs[0])
-            # print(number)
             if probs[0] > number: 
-               # print('switch')
                 prod.prod_tech_preference = probs[1]
-               # print(prod.prod_tech_preference)
 
-        #    prod.prod_switch(other_prod)
 
         # Compare payoff to random consumer and save data for switching 
         cons_probs = {}
-        cons_factor_j1_bg = self.perc_brown_cons_j1 * ((self.total_green_consumers_j1 + self.gamma * self.total_green_consumers_j2) / (self.n_consumers_j1 + self.beta * self.n_consumers_j2))
-        cons_factor_j1_gb = self.perc_green_cons_j1 * ((self.total_brown_consumers_j1 + self.gamma * self.total_brown_consumers_j2) / (self.n_consumers_j1 + self.beta * self.n_consumers_j2))
-        cons_factor_j2_bg = self.perc_brown_cons_j2 * ((self.total_green_consumers_j2 + self.gamma * self.total_green_consumers_j1) / (self.n_consumers_j2 + self.beta * self.n_consumers_j1))
-        cons_factor_j2_gb = self.perc_brown_cons_j2 * ((self.total_green_consumers_j2 + self.gamma * self.total_green_consumers_j1) / (self.n_consumers_j2 + self.beta * self.n_consumers_j1))
+        cons_factor_j1_bg = self.perc_brown_cons_j1 * ((self.total_green_consumers_j1 + self.gamma * self.total_green_consumers_j2) / (self.n_consumers_j1 + self.gamma * self.n_consumers_j2))
+        cons_factor_j1_gb = self.perc_green_cons_j1 * ((self.total_brown_consumers_j1 + self.gamma * self.total_brown_consumers_j2) / (self.n_consumers_j1 + self.gamma * self.n_consumers_j2))
+        cons_factor_j2_bg = self.perc_brown_cons_j2 * ((self.total_green_consumers_j2 + self.gamma * self.total_green_consumers_j1) / (self.n_consumers_j2 + self.gamma * self.n_consumers_j1))
+        cons_factor_j2_gb = self.perc_brown_cons_j2 * ((self.total_green_consumers_j2 + self.gamma * self.total_green_consumers_j1) / (self.n_consumers_j2 + self.gamma * self.n_consumers_j1))
         for cons in self.consumers:
             if cons.jurisdiction == 1:
                 other_cons = random.choice(self.consumers_j1)
@@ -499,13 +479,8 @@ class Jurisdiction(Model):
         # Do the actual consumer switching
         for cons, probs in cons_probs.items():
             number = random.random()
-            # print(cons.cons_tech_preference)
-            # print(probs[0])
-            # print(number)
             if probs[0] > number:
-               # print('switch')
                 cons.cons_tech_preference = probs[1]
-                #print(cons.cons_tech_preference)
         #super().__init__()
 
 
@@ -521,7 +496,7 @@ class Jurisdiction(Model):
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
-    model = Jurisdiction(n_consumers=2000, n_producers=1000, tax=0, alpha=0, beta=0, gamma=0)
+    model = Jurisdiction(n_consumers=1500, n_producers=750, tax=0, alpha=0.1, beta=0, gamma=0)
     for i in tqdm(range(1000)):
         model.step()
 
