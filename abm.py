@@ -14,12 +14,12 @@ from numba import jit
 
 # CONSUMER CLASS
 class Consumer(Agent):
-    def __init__(self, unique_id, model, tech_pref, jurisdiction):#, tech_preference):
+    def __init__(self, unique_id, model, tech_pref, jurisdiction, ext_brown, ext_green):#, tech_preference):
         super().__init__(unique_id, model)
         self.cons_tech_preference = tech_pref #random.choices(['brown', 'green'], weights=[5, 5])[0]
         self.benefit = 0.5 #random.uniform(0, 1)  # can make it random for heterogeneous agents
-        self.ext_brown = 0.1#random.uniform(0, 1) 
-        self.ext_green = 0.5
+        self.ext_brown = ext_brown#random.uniform(0, 1) 
+        self.ext_green = ext_green
         self.price_green = 0.5 
         self.price_brown = 0.5
         self.payoff = 0
@@ -56,12 +56,12 @@ class Consumer(Agent):
 
 # PRODUCER CLASS
 class Producer(Agent):
-    def __init__(self, unique_id, model, tech_pref, jurisdiction):#, tech_preference):
+    def __init__(self, unique_id, model, tech_pref, jurisdiction, cost_brown, cost_green, tax):#, tech_preference):
         super().__init__(unique_id, model)
         self.prod_tech_preference = tech_pref #random.choices(['brown', 'green'], weights=[5, 5])[0]
-        self.cost_brown = 0.25
-        self.cost_green = 0.45
-        self.tax = 0
+        self.cost_brown = cost_brown
+        self.cost_green = cost_green
+        self.tax = tax
         self.fixed_cost = 0 
         self.price_brown = 0.5
         self.price_green = 0.5
@@ -104,7 +104,7 @@ class Producer(Agent):
 # JURISDICTION CLASS
 class Jurisdiction(Model):
 
-    def __init__(self, n_producers, n_consumers,tax,alpha,beta,gamma):
+    def __init__(self, n_producers, n_consumers,alpha,beta,gamma, cost_brown, cost_green, ext_brown, ext_green, tax):
 
         self.tax = tax
         self.alpha = alpha
@@ -143,14 +143,14 @@ class Jurisdiction(Model):
         for i in range(n_consumers):
             jurisdiction = 1 if i < (n_consumers / 2) else 2
             tech_pref = 'brown' if (i < n_consumers / 4 or i >= n_consumers * 0.75) else 'green'
-            consumer = Consumer(i, self, tech_pref, jurisdiction)
+            consumer = Consumer(i, self, tech_pref, jurisdiction, ext_brown, ext_green)
             self.schedule.add(consumer)
         
         # Create producers
         for i in range(n_producers):
             jurisdiction = 1 if i < (n_producers / 2) else 2
             tech_pref = 'brown' if (i < n_producers / 4 or i >= n_producers * 0.75) else 'green'
-            producer = Producer(n_consumers + i, self, tech_pref, jurisdiction)
+            producer = Producer(n_consumers + i, self, tech_pref, jurisdiction, cost_brown, cost_green, tax)
             self.schedule.add(producer)
 
         self.consumers = [agent for agent in self.schedule.agents if isinstance(agent, Consumer)]
@@ -495,52 +495,76 @@ class Jurisdiction(Model):
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
-    model = Jurisdiction(n_consumers=1000, n_producers=1000, tax=0, alpha=0, beta=0, gamma=0)
-    for i in tqdm(range(150)):
-        model.step()
 
-    # Retrieve and plot data collected by the DataCollector
-    model_data = model.datacollector.get_model_vars_dataframe()
-    #print(model_data)
-    # Separate data for brown and green products
-    #brown_data = model_data.filter(like='Brown')
-    #green_data = model_data.filter(like='Green')
+    cost_green_values = np.linspace(0.1, 0.5, num=25)
 
-    # Create separate plots for brown and green products
-    plt.figure(figsize=(7, 4))
+    # Dictionary to store the results
+    average_results_J1P = {}
+    average_results_J1C = {}
+    average_results_J2P = {}
+    average_results_J2C = {}
+    for cost_g in tqdm(cost_green_values):
+        results_J1P = []
+        results_J1C = []
+        results_J2P = []
+        results_J2C = []
+        for i in range(100):  # 100 runs
+            model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=cost_g, ext_brown=0.25, ext_green=0.25, tax=0)
+            for j in range(100):  # 100 steps per run
+                model.step()
 
-    # Plot brown products
-    # plt.subplot(1, 3, 1)
-    # for column in brown_data.columns:
-    #     plt.plot(brown_data[column], label=column)
-    # plt.title('Brown Products')
-    # plt.xlabel('Steps')
-    # plt.ylabel('Count')
-    # plt.legend()
-    # #plt.xticks(range(0, len(brown_data)), map(int, brown_data.index))
+            model_data =  model.datacollector.get_model_vars_dataframe()
+            results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+            results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+            results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+            results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-    # # Plot green products
-    # plt.subplot(1, 3, 2)
-    # for column in green_data.columns:
-    #     plt.plot(green_data[column], label=column)
-    # plt.title('Green Products')
-    # plt.xlabel('Steps')
-    # plt.ylabel('Count')
-    # plt.legend()
-    #plt.xticks(range(0, len(green_data)), map(int, green_data.index))
+        average_results_J1P[cost_g] = np.mean(results_J1P)
+        average_results_J1C[cost_g] = np.mean(results_J1C)
+        average_results_J2P[cost_g] = np.mean(results_J2P)
+        average_results_J2C[cost_g] = np.mean(results_J2C)
 
-    # adoption rates
-    # plt.subplot(1, 3, 3)
-    #plt.plot(model_data['Percentage brown Producers'], label='Percentage Brown Producers')
-    plt.plot(model_data['Percentage green Producers J1'], label='Percentage Green Producers J1', color='indianred')
-    plt.plot(model_data['Percentage green Consumers J1'], label='Percentage Green Consumers J1', color='darkred')
-    plt.plot(model_data['Percentage green Producers J2'], label='Percentage Green Producers J2', color='deepskyblue')
-    plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
-    plt.title('Adoption of green tech')
-    plt.xlabel('Steps')
-    plt.ylabel('Percentage')
-    plt.legend()
-    #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
+    fig, axs = plt.subplots(2)
+    axs[0].plot(average_results_J1P.keys(), average_results_J1P.values(), label='J1')
+    axs[0].plot(average_results_J2P.keys(), average_results_J2P.values(), label='J2')
+    axs[0].set_title('Producers')
+    axs[0].set_xlabel('Cost of green') 
+    axs[0].set_ylabel('Adoption rate of green')
+    axs[0].legend()
+
+    axs[1].plot(average_results_J1C.keys(), average_results_J1C.values(), label='J1')
+    axs[1].plot(average_results_J2C.keys(), average_results_J2C.values(), label='J2')
+    axs[1].set_title('Consumers')
+    axs[0].set_xlabel('Cost of green') 
+    axs[0].set_ylabel('Adoption rate of green')
+    axs[1].legend()
 
     plt.tight_layout()
     plt.show()
+
+
+
+    
+    # model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=0.25, ext_brown=0.25, ext_green=0.25, tax=0)
+    # for i in tqdm(range(100)):
+    #     model.step()
+
+    # # Retrieve and plot data collected by the DataCollector
+    # model_data = model.datacollector.get_model_vars_dataframe()
+    # print(model_data['Percentage green Producers J1'].iloc[0])
+    # print(model_data['Percentage green Producers J1'].iloc[-1])
+
+    # plt.figure(figsize=(7, 4))
+
+    # plt.plot(model_data['Percentage green Producers J1'], label='Percentage Green Producers J1', color='indianred')
+    # plt.plot(model_data['Percentage green Consumers J1'], label='Percentage Green Consumers J1', color='darkred')
+    # plt.plot(model_data['Percentage green Producers J2'], label='Percentage Green Producers J2', color='deepskyblue')
+    # plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
+    # plt.title('Adoption of green tech')
+    # plt.xlabel('Steps')
+    # plt.ylabel('Percentage')
+    # plt.legend()
+    # #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
+
+    # plt.tight_layout()
+    # plt.show()
