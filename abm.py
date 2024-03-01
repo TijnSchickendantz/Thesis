@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import random
 from tqdm import tqdm
 from numba import jit
+from scipy import stats
 
 #RandomActivation: Activates each agent once per step, 
 #in random order, with the order reshuffled every step.
@@ -496,20 +497,24 @@ class Jurisdiction(Model):
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
 
-    cost_green_values = np.linspace(0.1, 0.5, num=25)
+    ext_green_values = np.linspace(0.01, 0.5, num=10)
 
     # Dictionary to store the results
     average_results_J1P = {}
     average_results_J1C = {}
     average_results_J2P = {}
     average_results_J2C = {}
-    for cost_g in tqdm(cost_green_values):
+    ci_J1P = {}
+    ci_J1C = {}
+    ci_J2P = {}
+    ci_J2C = {}
+    for ext_g in tqdm(ext_green_values):
         results_J1P = []
         results_J1C = []
         results_J2P = []
         results_J2C = []
-        for i in range(100):  # 100 runs
-            model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=cost_g, ext_brown=0.25, ext_green=0.25, tax=0)
+        for i in range(6):  # 100 runs
+            model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=0.25, ext_brown=0.25, ext_green=ext_g, tax=0)
             for j in range(100):  # 100 steps per run
                 model.step()
 
@@ -519,23 +524,38 @@ if __name__ == "__main__":
             results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
             results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-        average_results_J1P[cost_g] = np.mean(results_J1P)
-        average_results_J1C[cost_g] = np.mean(results_J1C)
-        average_results_J2P[cost_g] = np.mean(results_J2P)
-        average_results_J2C[cost_g] = np.mean(results_J2C)
+        average_results_J1P[ext_g] = np.mean(results_J1P)
+        average_results_J1C[ext_g] = np.mean(results_J1C)
+        average_results_J2P[ext_g] = np.mean(results_J2P)
+        average_results_J2C[ext_g] = np.mean(results_J2C)
+
+        # ci_J1P[ext_g] = stats.t.interval(0.95, len(results_J1P) - 1, loc=np.mean(results_J1P), scale=stats.sem(results_J1P))
+        # ci_J1C[ext_g] = stats.t.interval(0.95, len(results_J1C) - 1, loc=np.mean(results_J1C), scale=stats.sem(results_J1C))
+        # ci_J2P[ext_g] = stats.t.interval(0.95, len(results_J2P) - 1, loc=np.mean(results_J2P), scale=stats.sem(results_J2P))
+        # ci_J2C[ext_g] = stats.t.interval(0.95, len(results_J2C) - 1, loc=np.mean(results_J2C), scale=stats.sem(results_J2C))
+
+
+    # ci_values_1 = [((v[1] - v[0]) / 2) for v in ci_J1P.values()]
+    # ci_values_2 = [((v[1] - v[0]) / 2) for v in ci_J1C.values()]
+    # ci_values_3 = [((v[1] - v[0]) / 2) for v in ci_J2P.values()]
+    # ci_values_4 = [((v[1] - v[0]) / 2) for v in ci_J2C.values()]
 
     fig, axs = plt.subplots(2)
     axs[0].plot(average_results_J1P.keys(), average_results_J1P.values(), label='J1')
     axs[0].plot(average_results_J2P.keys(), average_results_J2P.values(), label='J2')
+    #axs[0].errorbar(average_results_J1P.keys(), average_results_J1P.values(), yerr=ci_values_1, fmt='none', capsize=5)
+    #axs[0].errorbar(average_results_J2P.keys(), average_results_J2P.values(), yerr= ci_values_3, fmt='none', capsize=5)
     axs[0].set_title('Producers')
-    axs[0].set_xlabel('Cost of green') 
+    axs[0].set_xlabel('Green Externality') 
     axs[0].set_ylabel('Adoption rate of green')
     axs[0].legend()
 
     axs[1].plot(average_results_J1C.keys(), average_results_J1C.values(), label='J1')
     axs[1].plot(average_results_J2C.keys(), average_results_J2C.values(), label='J2')
+    #axs[1].errorbar(average_results_J1C.keys(), average_results_J1C.values(), yerr=ci_values_2, fmt='none', capsize=5)
+    #axs[1].errorbar(average_results_J2C.keys(), average_results_J2C.values(), yerr=ci_values_4, fmt='none', capsize=5)
     axs[1].set_title('Consumers')
-    axs[0].set_xlabel('Cost of green') 
+    axs[1].set_xlabel('Green Externality') 
     axs[0].set_ylabel('Adoption rate of green')
     axs[1].legend()
 
@@ -545,7 +565,7 @@ if __name__ == "__main__":
 
 
     
-    # model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=0.25, ext_brown=0.25, ext_green=0.25, tax=0)
+    # model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=0.25, ext_brown=0.25, ext_green=0.25, tax=0.1)
     # for i in tqdm(range(100)):
     #     model.step()
 
