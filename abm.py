@@ -496,7 +496,7 @@ class Jurisdiction(Model):
 if __name__ == "__main__":
 
     tax_levels = [0.1,0.2,0.3,0.35]
-    for tax in tax_levels
+    #for tax in tax_levels
     # cost_green_values = np.linspace(0.01, 0.5, num=25)
 
     # # Dictionary to store the results
