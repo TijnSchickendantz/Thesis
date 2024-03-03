@@ -495,8 +495,60 @@ class Jurisdiction(Model):
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
 
-    tax_levels = [0.1,0.2,0.3,0.35]
-    #for tax in tax_levels
+    # tax_levels = [0.1,0.2,0.3,0.35]
+    beta_vals = np.linspace(0,1,11)
+    gamma_vals = np.linspace(0,1,11)
+    # for tax in tax_levels:
+    # strategy: save 4 matrices of data per agent/Jurisdiction combination.
+    adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
+    adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
+    adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
+    adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
+
+    for i, beta in tqdm(enumerate(beta_vals)):
+        for j, gamma in enumerate(gamma_vals):
+            results_J1P = []
+            results_J1C = []
+            results_J2P = []
+            results_J2C = []
+            for k in range(30):  
+                model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.25, ext_brown=0.25, ext_green=0.25, tax=0)
+                for l in range(100):  
+                    model.step()
+
+                model_data =  model.datacollector.get_model_vars_dataframe()
+                results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+                results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+                results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+                results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+
+            adoption_J1P[j,i] = np.mean(results_J1P)
+            adoption_J1C[j,i] = np.mean(results_J1C)
+            adoption_J2P[j,i] = np.mean(results_J2P)
+            adoption_J2C[j,i] = np.mean(results_J2C)
+
+    fig, axs = plt.subplots(1, 4, figsize=(8, 2))
+
+    im1 = axs[0].imshow(adoption_J1P, cmap='gray', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)])  
+    axs[0].set_title('Producers J1')
+    axs[0].set_xlabel('Beta')  # Set x-axis label
+    axs[0].set_ylabel('Gamma')
+  
+
+    im2 = axs[1].imshow(adoption_J1C, cmap='gray', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)])  
+    axs[1].set_title('Consumers J1')
+
+    im3 = axs[2].imshow(adoption_J2P, cmap='gray', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)])  
+    axs[2].set_title('Producers J2')  
+
+    im4 = axs[3].imshow(adoption_J2C, cmap='gray', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)])  
+    axs[3].set_title('Consumers J2') 
+
+
+    plt.tight_layout()
+    plt.show()
+
+
     # cost_green_values = np.linspace(0.01, 0.5, num=25)
 
     # # Dictionary to store the results
@@ -565,24 +617,24 @@ if __name__ == "__main__":
 
 
     
-    model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=0.25, ext_brown=0.25, ext_green=0.25, tax=0.1)
-    for i in tqdm(range(100)):
-        model.step()
+    # model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0.5, gamma=0.5, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, tax=0.30)
+    # for i in tqdm(range(200)):
+    #     model.step()
 
-    # Retrieve and plot data collected by the DataCollector
-    model_data = model.datacollector.get_model_vars_dataframe()
+    # # Retrieve and plot data collected by the DataCollector
+    # model_data = model.datacollector.get_model_vars_dataframe()
 
-    plt.figure(figsize=(7, 4))
+    # plt.figure(figsize=(7, 4))
 
-    plt.plot(model_data['Percentage green Producers J1'], label='Percentage Green Producers J1', color='indianred')
-    plt.plot(model_data['Percentage green Consumers J1'], label='Percentage Green Consumers J1', color='darkred')
-    plt.plot(model_data['Percentage green Producers J2'], label='Percentage Green Producers J2', color='deepskyblue')
-    plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
-    plt.title('Adoption of green tech')
-    plt.xlabel('Steps')
-    plt.ylabel('Percentage')
-    plt.legend()
-    #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
+    # plt.plot(model_data['Percentage green Producers J1'], label='Percentage Green Producers J1', color='indianred')
+    # plt.plot(model_data['Percentage green Consumers J1'], label='Percentage Green Consumers J1', color='darkred')
+    # plt.plot(model_data['Percentage green Producers J2'], label='Percentage Green Producers J2', color='deepskyblue')
+    # plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
+    # plt.title('Adoption of green tech')
+    # plt.xlabel('Steps')
+    # plt.ylabel('Percentage')
+    # plt.legend()
+    # #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
 
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()

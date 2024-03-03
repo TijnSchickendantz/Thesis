@@ -10,6 +10,6 @@ import random
 #print(12//2, 11/2)
 
 
-cost_green_values = np.linspace(0.01, 0.5, num=10) 
-for i in cost_green_values:
-    print(i)
+cost_green_values = np.linspace(0, 1, 11) 
+for i,g in enumerate(cost_green_values):
+    print(g)
