@@ -46,7 +46,7 @@ class Consumer(Agent):
         if self.cons_tech_preference == other_consumer.cons_tech_preference:
             return 0
         else:
-            return (1 + np.exp(-1 * (payoff_other_cons - payoff_cons))) ** - 1
+            return (1 + np.exp(-5 * (payoff_other_cons - payoff_cons))) ** - 1
                                                        
 
     def __str__(self):
@@ -92,7 +92,7 @@ class Producer(Agent):
         if self.prod_tech_preference == other_producer.prod_tech_preference:
             return 0
         else:
-            return (1 + np.exp(-1 * (payoff_other_prod - payoff_prod))) ** - 1
+            return (1 + np.exp(-5 * (payoff_other_prod - payoff_prod))) ** - 1
 
     
     def __str__(self):
@@ -141,14 +141,14 @@ class Jurisdiction(Model):
         # Create consumers
         for i in range(n_consumers):
             jurisdiction = 1 if i < (n_consumers / 2) else 2
-            tech_pref = 'brown' if (i < n_consumers / 4 or i >= n_consumers * 0.75) else 'green'
+            tech_pref = 'green' if (i <= n_consumers * 0.2 or i >= n_consumers * 0.8) else 'brown'
             consumer = Consumer(i, self, tech_pref, jurisdiction, ext_brown, ext_green)
             self.schedule.add(consumer)
         
         # Create producers
         for i in range(n_producers):
             jurisdiction = 1 if i < (n_producers / 2) else 2
-            tech_pref = 'brown' if (i < n_producers / 4 or i >= n_producers * 0.75) else 'green'
+            tech_pref = 'green' if (i <= n_producers * 0.2 or i >= n_producers * 0.8) else 'brown'
             producer = Producer(n_consumers + i, self, tech_pref, jurisdiction, cost_brown, cost_green, tax)
             self.schedule.add(producer)
 
@@ -268,49 +268,54 @@ class Jurisdiction(Model):
             #print(agent)
             product_color = agent.cons_tech_preference
             juris = agent.jurisdiction
-        #     if product_color == 'brown' and (self.total_brown_products_j1 != 0 or self.total_brown_products_j2 != 0):
-        #         if juris == 1:
-        #             #print('brown 1')
-        #             prob_j1 = self.total_brown_products_j1 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
-        #             #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
-        #             if prob_j1 > random.random():
-        #                 self.total_brown_products_j1 -= 1
-        #             else:
-        #                 self.total_brown_products_j2 -= 1
-        #         if juris == 2:
-        #             #print('brown 2')
-        #             prob_j2 = self.total_brown_products_j2 / (alpha* self.total_brown_products_j1 + self.total_brown_products_j2)
-        #             if prob_j2 > random.random():
-        #                 self.total_brown_products_j2 -= 1
-        #             else:
-        #                 self.total_brown_products_j1 -= 1
 
-        #         agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
+            # Global depletion system
+            # if product_color == 'brown' and (self.total_brown_products_j1 != 0 or self.total_brown_products_j2 != 0):
+            #     #print('green')
+            #     if juris == 1:
+            #         #print('brown 1')
+            #         prob_j1 = self.total_brown_products_j1 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+            #         #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+            #         if prob_j1 > random.random():
+            #             self.total_brown_products_j1 -= 1
+            #         else:
+            #             self.total_brown_products_j2 -= 1
+            #     elif juris == 2:
+            #         #print('brown 2')
+            #         prob_j2 = self.total_brown_products_j2 / (alpha* self.total_brown_products_j1 + self.total_brown_products_j2)
+            #         if prob_j2 > random.random():
+            #             self.total_brown_products_j2 -= 1
+            #         else:
+            #             self.total_brown_products_j1 -= 1
 
-        #     elif product_color == 'green' and (self.total_green_products_j1 != 0 or self.total_green_products_j2 != 0):
-        #         if juris == 1:
-        #             #print('green 1')
-        #             prob_j1 = self.total_green_products_j1 / (self.total_green_products_j1 + alpha * self.total_green_products_j2)
-        #             #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
-        #             if prob_j1 > random.random():
-        #                 self.total_green_products_j1 -= 1
-        #             else:
-        #                 self.total_green_products_j2 -= 1
-        #         if juris == 2:
-        #             #print('green 2')
-        #             prob_j2 = self.total_green_products_j2 / (alpha* self.total_green_products_j1 + self.total_green_products_j2)
-        #             if prob_j2 > random.random():
-        #                 self.total_green_products_j2 -= 1
-        #             else:
-        #                 self.total_green_products_j1 -= 1
+            #     agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
 
-        #         agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
+            # elif product_color == 'green' and (self.total_green_products_j1 != 0 or self.total_green_products_j2 != 0):
+            #     #print('brown')
+            #     if juris == 1:
+            #         #print('green 1')
+            #         prob_j1 = self.total_green_products_j1 / (self.total_green_products_j1 + alpha * self.total_green_products_j2)
+            #         #prob_j2 =  alpha * self.total_brown_products_j2 / (self.total_brown_products_j1 + alpha * self.total_brown_products_j2)
+            #         if prob_j1 > random.random():
+            #             self.total_green_products_j1 -= 1
+            #         else:
+            #             self.total_green_products_j2 -= 1
+            #     elif juris == 2:
+            #         #print('green 2')
+            #         prob_j2 = self.total_green_products_j2 / (alpha* self.total_green_products_j1 + self.total_green_products_j2)
+            #         if prob_j2 > random.random():
+            #             self.total_green_products_j2 -= 1
+            #         else:
+            #             self.total_green_products_j1 -= 1
 
-        #     else:
-        #         agent.payoff = 0
+            #     agent.payoff = agent.cons_payoff(agent.cons_tech_preference)
+
+            # else:
+            #     agent.payoff = 0
+                #print('zero payoff')
                 
 
-            # this code is for first depleting local supply
+        #     # this code is for first depleting local supply
             if product_color == 'brown':
                 if self.total_brown_products_j1 > 0 and juris == 1:
                     #print('i have bought brown in j1')
@@ -340,7 +345,7 @@ class Jurisdiction(Model):
                 else:
                     agent.payoff = 0 # consumer not able to buy
                     #print('i coudldnt buy')
-            #print('next')
+           # print('next')
         
         #Let global consumers buy what is left in the other jurisdiction
         if self.total_brown_products_j1 > 0:
@@ -495,62 +500,160 @@ class Jurisdiction(Model):
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
 
+    # SINGLE RUN
+
+    # adoptj1 = 0
+    # adoptj2 = 0
+    # model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.7, gamma=0.7, cost_brown=0.3, cost_green=0.45, ext_brown=0.1, ext_green=0.25, tax=0.2)
+    # for i in tqdm(range(150)):
+    #     model.step()
+
+    # # Retrieve and plot data collected by the DataCollector
+    # model_data = model.datacollector.get_model_vars_dataframe()
+
+    # plt.figure(figsize=(7, 4))
+
+    # plt.plot(model_data['Percentage green Producers J1'], label='Percentage Green Producers J1', color='indianred')
+    # plt.plot(model_data['Percentage green Consumers J1'], label='Percentage Green Consumers J1', color='darkred')
+    # plt.plot(model_data['Percentage green Producers J2'], label='Percentage Green Producers J2', color='deepskyblue')
+    # plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
+    # plt.title('Adoption of green tech')
+    # plt.xlabel('Steps')
+    # plt.ylabel('Percentage')
+    # plt.legend()
+    # #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
+
+    # plt.tight_layout()
+    # plt.show()
+
+
+    # BETA/GAMMA HEATMAPS
+
     # tax_levels = [0.1,0.2,0.3,0.35]
-    beta_vals = np.linspace(0,1,11)
-    gamma_vals = np.linspace(0,1,11)
-    # for tax in tax_levels:
-    # strategy: save 4 matrices of data per agent/Jurisdiction combination.
-    adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
-    adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
-    adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
-    adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
+    # beta_vals = np.linspace(0,1,11)
+    # gamma_vals = np.linspace(0,1,11)
+    # # for tax in tax_levels:
+    # # strategy: save 4 matrices of data per agent/Jurisdiction combination.
+    # adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
+    # adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
+    # adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
+    # adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
 
-    for i, beta in tqdm(enumerate(beta_vals)):
-        for j, gamma in enumerate(gamma_vals):
-            results_J1P = []
-            results_J1C = []
-            results_J2P = []
-            results_J2C = []
-            for k in range(30):  
-                model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.25, ext_brown=0.25, ext_green=0.25, tax=0)
-                for l in range(100):  
-                    model.step()
+    # for i, beta in tqdm(enumerate(beta_vals)):
+    #     for j, gamma in enumerate(gamma_vals):
+    #         results_J1P = []
+    #         results_J1C = []
+    #         results_J2P = []
+    #         results_J2C = []
+    #         for k in range(30):  
+    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, tax=0.25)
+    #             for l in range(100):  
+    #                 model.step()
 
-                model_data =  model.datacollector.get_model_vars_dataframe()
-                results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
-                results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
-                results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
-                results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+    #             model_data =  model.datacollector.get_model_vars_dataframe()
+    #             results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #             results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+    #             results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+    #             results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-            adoption_J1P[j,i] = np.mean(results_J1P)
-            adoption_J1C[j,i] = np.mean(results_J1C)
-            adoption_J2P[j,i] = np.mean(results_J2P)
-            adoption_J2C[j,i] = np.mean(results_J2C)
+    #         adoption_J1P[j,i] = np.mean(results_J1P)
+    #         adoption_J1C[j,i] = np.mean(results_J1C)
+    #         adoption_J2P[j,i] = np.mean(results_J2P)
+    #         adoption_J2C[j,i] = np.mean(results_J2C)
 
-    fig, axs = plt.subplots(1, 4, figsize=(8, 2))
+    # adoption_J1P = np.flipud(adoption_J1P)
+    # adoption_J1P = np.flipud(adoption_J1P)
+    # adoption_J1P = np.flipud(adoption_J1P)
+    # adoption_J1P = np.flipud(adoption_J1P)
+    # fig, axs = plt.subplots(1, 4, figsize=(8, 2))
 
-    im1 = axs[0].imshow(adoption_J1P, cmap='gray', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)])  
-    axs[0].set_title('Producers J1')
-    axs[0].set_xlabel('Beta')  # Set x-axis label
-    axs[0].set_ylabel('Gamma')
+    # im1 = axs[0].imshow(adoption_J1P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)], 
+    #                     vmin=0, vmax=1)  
+    # axs[0].set_title('Producers J1')
+    # axs[0].set_xlabel('Beta') 
+    # axs[0].set_ylabel('Gamma')
   
 
-    im2 = axs[1].imshow(adoption_J1C, cmap='gray', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)])  
-    axs[1].set_title('Consumers J1')
+    # im2 = axs[1].imshow(adoption_J1C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+    #                     vmin=0, vmax=1)  
+    # axs[1].set_title('Consumers J1')
+    # axs[1].set_xlabel('Beta') 
 
-    im3 = axs[2].imshow(adoption_J2P, cmap='gray', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)])  
-    axs[2].set_title('Producers J2')  
+    # im3 = axs[2].imshow(adoption_J2P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+    #                     vmin=0, vmax=1)  
+    # axs[2].set_title('Producers J2')  
+    # axs[2].set_xlabel('Beta') 
 
-    im4 = axs[3].imshow(adoption_J2C, cmap='gray', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)])  
-    axs[3].set_title('Consumers J2') 
+    # im4 = axs[3].imshow(adoption_J2C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+    #                     vmin=0, vmax=1)  
+    # axs[3].set_title('Consumers J2') 
+    # axs[3].set_xlabel('Beta') 
+    # #Add colorbar axis
+    # #cax = fig.add_axes([0.96, 0.15, 0.01, 0.7])  # [left, bottom, width, height]
 
+    # # Add colorbar
+    # #cbar = fig.colorbar(im4, cax=cax)
+
+    # #cbar = fig.colorbar(im4, ax=axs, fraction=0.05, pad=0.05, location='right')
+
+    # # Set label for the colorbar
+    # #cbar.set_label('Adoption rate')
+    # plt.tight_layout()
+    # plt.show()
+
+
+    # ADOPTION AS A FUNCTION OF TAX
+
+    tax_values = np.linspace(0, 0.9, num=25)
+    # Dictionary to store the results
+    average_results_J1P = {}
+    average_results_J1C = {}
+    average_results_J2P = {}
+    average_results_J2C = {}
+    for tax_val in tqdm(tax_values):
+        results_J1P = []
+        results_J1C = []
+        results_J2P = []
+        results_J2C = []
+        for i in range(10):  
+            model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.5, gamma=0.5, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, tax=tax_val)
+            for j in range(100):  
+                model.step()
+
+            model_data =  model.datacollector.get_model_vars_dataframe()
+            results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+            results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+            results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+            results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+
+        average_results_J1P[tax_val] = np.mean(results_J1P)
+        average_results_J1C[tax_val] = np.mean(results_J1C)
+        average_results_J2P[tax_val] = np.mean(results_J2P)
+        average_results_J2C[tax_val] = np.mean(results_J2C)
+
+
+    fig, axs = plt.subplots(2)
+    axs[0].plot(average_results_J1P.keys(), average_results_J1P.values(), label='J1')
+    axs[0].plot(average_results_J2P.keys(), average_results_J2P.values(), label='J2')
+    axs[0].set_title('Producers')
+    axs[0].set_xlabel('Tax') 
+    axs[0].set_ylabel('Adoption rate of green')
+    axs[0].legend()
+
+    axs[1].plot(average_results_J1C.keys(), average_results_J1C.values(), label='J1')
+    axs[1].plot(average_results_J2C.keys(), average_results_J2C.values(), label='J2')
+    axs[1].set_title('Consumers')
+    axs[1].set_xlabel('Tax') 
+    axs[1].set_ylabel('Adoption rate of green')
+    axs[1].legend()
 
     plt.tight_layout()
     plt.show()
 
 
-    # cost_green_values = np.linspace(0.01, 0.5, num=25)
+    # ADOPTION OF AS A FUNCTION OF COST
 
+    # cost_green_values = np.linspace(0.01, 0.5, num=25)
     # # Dictionary to store the results
     # average_results_J1P = {}
     # average_results_J1C = {}
@@ -566,7 +669,7 @@ if __name__ == "__main__":
     #     results_J2P = []
     #     results_J2C = []
     #     for i in range(50):  
-    #         model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=cost_g, ext_brown=0.25, ext_green=0.25, tax=0.1)
+    #         model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=cost_g, ext_brown=0.2, ext_green=0.3, tax=0.2)
     #         for j in range(100):  
     #             model.step()
 
@@ -614,27 +717,3 @@ if __name__ == "__main__":
     # plt.tight_layout()
     # plt.show()
 
-
-
-    
-    # model = Jurisdiction(n_consumers=1000, n_producers=1000, alpha=0, beta=0.5, gamma=0.5, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, tax=0.30)
-    # for i in tqdm(range(200)):
-    #     model.step()
-
-    # # Retrieve and plot data collected by the DataCollector
-    # model_data = model.datacollector.get_model_vars_dataframe()
-
-    # plt.figure(figsize=(7, 4))
-
-    # plt.plot(model_data['Percentage green Producers J1'], label='Percentage Green Producers J1', color='indianred')
-    # plt.plot(model_data['Percentage green Consumers J1'], label='Percentage Green Consumers J1', color='darkred')
-    # plt.plot(model_data['Percentage green Producers J2'], label='Percentage Green Producers J2', color='deepskyblue')
-    # plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
-    # plt.title('Adoption of green tech')
-    # plt.xlabel('Steps')
-    # plt.ylabel('Percentage')
-    # plt.legend()
-    # #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
-
-    # plt.tight_layout()
-    # plt.show()
