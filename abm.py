@@ -15,7 +15,7 @@ from scipy import stats
 
 # CONSUMER CLASS
 class Consumer(Agent):
-    def __init__(self, unique_id, model, tech_pref, jurisdiction, ext_brown, ext_green):#, tech_preference):
+    def __init__(self, unique_id, model, tech_pref, jurisdiction, ext_brown, ext_green, intensity):#, tech_preference):
         super().__init__(unique_id, model)
         self.cons_tech_preference = tech_pref #random.choices(['brown', 'green'], weights=[5, 5])[0]
         self.benefit = 0.5 #random.uniform(0, 1)  # can make it random for heterogeneous agents
@@ -25,6 +25,7 @@ class Consumer(Agent):
         self.price_brown = 0.5
         self.payoff = 0
         self.jurisdiction = jurisdiction #random.choice([1,2]) # every agent belongs to either jurisdiction
+        self.intensity = intensity
 
     def buy(self):
         return random.choice(['brown', 'green']) # change to self.cons_tech_preference when switching is possible
@@ -46,7 +47,7 @@ class Consumer(Agent):
         if self.cons_tech_preference == other_consumer.cons_tech_preference:
             return 0
         else:
-            return (1 + np.exp(-5 * (payoff_other_cons - payoff_cons))) ** - 1
+            return (1 + np.exp(-self.intensity * (payoff_other_cons - payoff_cons))) ** - 1
                                                        
 
     def __str__(self):
@@ -56,7 +57,7 @@ class Consumer(Agent):
 
 # PRODUCER CLASS
 class Producer(Agent):
-    def __init__(self, unique_id, model, tech_pref, jurisdiction, cost_brown, cost_green, tax):#, tech_preference):
+    def __init__(self, unique_id, model, tech_pref, jurisdiction, cost_brown, cost_green, tax,intensity):#, tech_preference):
         super().__init__(unique_id, model)
         self.prod_tech_preference = tech_pref #random.choices(['brown', 'green'], weights=[5, 5])[0]
         self.cost_brown = cost_brown
@@ -67,6 +68,7 @@ class Producer(Agent):
         self.price_green = 0.5
         self.payoff = 0
         self.jurisdiction =  jurisdiction #random.choice([1,2]) # every agent belongs to either jurisdiction
+        self.intensity = intensity
 
     def produce(self):
         return random.choice(['brown', 'green']) # change to self.prod_tech_preference when swithcing is possible
@@ -92,7 +94,7 @@ class Producer(Agent):
         if self.prod_tech_preference == other_producer.prod_tech_preference:
             return 0
         else:
-            return (1 + np.exp(-5 * (payoff_other_prod - payoff_prod))) ** - 1
+            return (1 + np.exp(-self.intensity * (payoff_other_prod - payoff_prod))) ** - 1
 
     
     def __str__(self):
@@ -103,7 +105,7 @@ class Producer(Agent):
 # JURISDICTION CLASS
 class Jurisdiction(Model):
 
-    def __init__(self, n_producers, n_consumers,alpha,beta,gamma, cost_brown, cost_green, ext_brown, ext_green, tax):
+    def __init__(self, n_producers, n_consumers,alpha,beta,gamma, cost_brown, cost_green, ext_brown, ext_green, tax, intensity):
 
         self.tax = tax
         self.alpha = alpha
@@ -142,14 +144,14 @@ class Jurisdiction(Model):
         for i in range(n_consumers):
             jurisdiction = 1 if i < (n_consumers / 2) else 2
             tech_pref = 'green' if (i <= n_consumers * 0.2 or i >= n_consumers * 0.8) else 'brown'
-            consumer = Consumer(i, self, tech_pref, jurisdiction, ext_brown, ext_green)
+            consumer = Consumer(i, self, tech_pref, jurisdiction, ext_brown, ext_green, intensity)
             self.schedule.add(consumer)
         
         # Create producers
         for i in range(n_producers):
             jurisdiction = 1 if i < (n_producers / 2) else 2
             tech_pref = 'green' if (i <= n_producers * 0.2 or i >= n_producers * 0.8) else 'brown'
-            producer = Producer(n_consumers + i, self, tech_pref, jurisdiction, cost_brown, cost_green, tax)
+            producer = Producer(n_consumers + i, self, tech_pref, jurisdiction, cost_brown, cost_green, tax, intensity)
             self.schedule.add(producer)
 
         self.consumers = [agent for agent in self.schedule.agents if isinstance(agent, Consumer)]
@@ -203,7 +205,6 @@ class Jurisdiction(Model):
     def trading_cycle(self,alpha):
 
         # every time we call the step function, we set the total products in the market to 0
-        # need to track this per jurisdiction later...
         self.total_brown_products = 0
         self.total_green_products = 0
 
@@ -239,6 +240,7 @@ class Jurisdiction(Model):
         self.total_green_consumers_j2 = len([agent for agent in self.consumers_j2 if agent.cons_tech_preference == 'green'])
 
 
+        # producer payoff, later deduce payoff of producers that havent sold
         for agent in self.producers:
             agent.payoff = agent.prod_payoff(agent.prod_tech_preference, agent.jurisdiction)
 
@@ -330,7 +332,7 @@ class Jurisdiction(Model):
                 else:
                     agent.payoff = 0 # consumer is not able to buy
                     #print('i coudldnt buy')
-            if product_color == 'green':
+            elif product_color == 'green':
                 #self.total_green_consumers += 1
                 if self.total_green_products_j1 > 0 and juris == 1:
                     #print('i have bought green in j1')
@@ -347,73 +349,78 @@ class Jurisdiction(Model):
                     #print('i coudldnt buy')
            # print('next')
         
-        #Let global consumers buy what is left in the other jurisdiction
-        if self.total_brown_products_j1 > 0:
-            poss_cons_j2b = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
-            amount_j2b = int(alpha * len(poss_cons_j2b))
-            subset_j2b = random.sample(poss_cons_j2b, amount_j2b)
-            if len(subset_j2b) != 0:
-                for cons in subset_j2b:
-                    if self.total_brown_products_j1 == 0:
-                        break  
-                    self.total_brown_products_j1 -= 1
-                    cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
-                    
-        if self.total_brown_products_j2 > 0:
-            poss_cons_j1b = [agent for agent in self.consumers_j1 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
-            amount_j1b = int(alpha * len(poss_cons_j1b))
-            subset_j1b = random.sample(poss_cons_j1b, amount_j1b)
-            if len(subset_j1b) != 0:
-                for cons in subset_j1b:
-                    if self.total_brown_products_j2 == 0:
-                        break  
-                    self.total_brown_products_j2 -= 1
-                    cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
+        if self.alpha > 0:
+            #Let global consumers buy what is left in the other jurisdiction
+            if self.total_brown_products_j1 > 0:
+                poss_cons_j2b = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
+                amount_j2b = int(alpha * len(poss_cons_j2b))
+                subset_j2b = random.sample(poss_cons_j2b, amount_j2b)
+                if len(subset_j2b) != 0:
+                    for cons in subset_j2b:
+                        if self.total_brown_products_j1 == 0:
+                            break  
+                        self.total_brown_products_j1 -= 1
+                        cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
+                        
+            if self.total_brown_products_j2 > 0:
+                poss_cons_j1b = [agent for agent in self.consumers_j1 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
+                amount_j1b = int(alpha * len(poss_cons_j1b))
+                subset_j1b = random.sample(poss_cons_j1b, amount_j1b)
+                if len(subset_j1b) != 0:
+                    for cons in subset_j1b:
+                        if self.total_brown_products_j2 == 0:
+                            break  
+                        self.total_brown_products_j2 -= 1
+                        cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
 
-        if self.total_green_products_j1 > 0:
-            poss_cons_j2g = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'green']
-            amount_j2g = int(alpha * len(poss_cons_j2g))
-            subset_j2g = random.sample(poss_cons_j2g, amount_j2g)
-            if len(subset_j2g) != 0:
-                for cons in subset_j2g:
-                    if self.total_green_products_j1 == 0:
-                        break  
-                    self.total_green_products_j1 -= 1
-                    cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
+            if self.total_green_products_j1 > 0:
+                poss_cons_j2g = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'green']
+                amount_j2g = int(alpha * len(poss_cons_j2g))
+                subset_j2g = random.sample(poss_cons_j2g, amount_j2g)
+                if len(subset_j2g) != 0:
+                    for cons in subset_j2g:
+                        if self.total_green_products_j1 == 0:
+                            break  
+                        self.total_green_products_j1 -= 1
+                        cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
 
-        if self.total_green_products_j2 > 0:
-            poss_cons_j1g = [agent for agent in self.consumers_j1 if agent.payoff == 0 and agent.cons_tech_preference == 'green']
-            amount_j1g = int(alpha * len(poss_cons_j1g))
-            subset_j1g = random.sample(poss_cons_j1g, amount_j1g)
-            if len(subset_j1g) != 0:
-                for cons in subset_j1g:
-                    if self.total_green_products_j2 == 0:
-                        break  
-                    self.total_green_products_j2 -= 1
-                    cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
+            if self.total_green_products_j2 > 0:
+                poss_cons_j1g = [agent for agent in self.consumers_j1 if agent.payoff == 0 and agent.cons_tech_preference == 'green']
+                amount_j1g = int(alpha * len(poss_cons_j1g))
+                subset_j1g = random.sample(poss_cons_j1g, amount_j1g)
+                if len(subset_j1g) != 0:
+                    for cons in subset_j1g:
+                        if self.total_green_products_j2 == 0:
+                            break  
+                        self.total_green_products_j2 -= 1
+                        cons.payoff = cons.cons_payoff(cons.cons_tech_preference)
 
 
         # after consumers have bought, subtract from payoff of random producers that havent sold
                     
         if self.total_brown_products_j1 > 0: # check if we have to perform the subtraction for brown J1
+            #print('brown J1:', self.total_brown_products_j1)
             brown_producers_j1 = [agent for agent in self.producers_j1 if agent.prod_tech_preference == 'brown']
             selected_producers_b1 = random.sample(brown_producers_j1, self.total_brown_products_j1)
             for prod in selected_producers_b1:
                 prod.payoff -= (prod.price_brown - prod.tax) # they dont pay tax if they dont sell the product?
 
         if self.total_brown_products_j2 > 0: # check if we have to perform the subtraction for brown J2
+            #print('brown J2:', self.total_brown_products_j2)
             brown_producers_j2 = [agent for agent in self.producers_j2 if agent.prod_tech_preference == 'brown']
             selected_producers_b2 = random.sample(brown_producers_j2, self.total_brown_products_j2)
             for prod in selected_producers_b2:
                 prod.payoff -= prod.price_brown # only tax for jurisdiction 1
 
         if self.total_green_products_j1 > 0: # check if we have to perform the subtraction for green J1
+            #print('green J1:', self.total_green_products_j1)
             green_producers_j1 = [agent for agent in self.producers_j1 if agent.prod_tech_preference == 'green']
             selected_producers_g1 = random.sample(green_producers_j1, self.total_green_products_j1)
             for prod in selected_producers_g1:
                 prod.payoff -= prod.price_green
 
         if self.total_green_products_j2 > 0: # check if we have to perform the subtraction for green J2
+            #print('green J2:', self.total_green_products_j2)
             green_producers_j2 = [agent for agent in self.producers_j2 if agent.prod_tech_preference == 'green']
             selected_producers_g2 = random.sample(green_producers_j2, self.total_green_products_j2)
             for prod in selected_producers_g2:
@@ -425,7 +432,7 @@ class Jurisdiction(Model):
         # Compare payoff to random producer and save data for switching
         # we dont need first term of every factor term
         prod_probs = {}
-        prod_factor_j1_bg = ((self.total_green_producers_j1 + self.beta * self.total_green_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2))
+        prod_factor_j1_bg = (self.total_green_producers_j1 + self.beta * self.total_green_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2)
         prod_factor_j1_gb = ((self.total_brown_producers_j1 + self.beta * self.total_brown_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2))
         prod_factor_j2_bg = ((self.total_green_producers_j2 + self.beta * self.total_green_producers_j1) / (self.n_producers_j2 + self.beta * self.n_producers_j1))
         prod_factor_j2_gb = ((self.total_brown_producers_j2 + self.beta * self.total_brown_producers_j1) / (self.n_producers_j2 + self.beta * self.n_producers_j1))
@@ -434,22 +441,24 @@ class Jurisdiction(Model):
             if prod.jurisdiction == 2:
                 other_prod = random.choice(self.producers_j2)
                 if prod.prod_tech_preference == 'brown':
-                    factor = prod_factor_j2_bg
+                    factor_p = prod_factor_j2_bg
                 else:
-                    factor = prod_factor_j2_gb
+                    factor_p = prod_factor_j2_gb
 
             elif prod.jurisdiction == 1:
                 other_prod = random.choice(self.producers_j1)
                 if prod.prod_tech_preference == 'brown':
-                    factor = prod_factor_j1_bg
+                    factor_p = prod_factor_j1_bg
                 else:
-                    factor = prod_factor_j1_gb
+                    factor_p = prod_factor_j1_gb
 
-            prod_probs[prod] = (factor * prod.prod_switch(other_prod), other_prod.prod_tech_preference)  #(prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
+           # print('prod', factor_p, prod.prod_switch(other_prod), factor_p * prod.prod_switch(other_prod))
+            prod_probs[prod] = (factor_p * prod.prod_switch(other_prod), other_prod.prod_tech_preference)  #(prod.payoff - other_prod.payoff, other_prod.prod_tech_preference) # change to probability later
 
         # Do the actual producer switching
         for prod, probs in prod_probs.items():
             number = random.random()
+            #print(probs[0], number)
             if probs[0] > number: 
                 prod.prod_tech_preference = probs[1]
 
@@ -464,26 +473,45 @@ class Jurisdiction(Model):
             if cons.jurisdiction == 2:
                 other_cons = random.choice(self.consumers_j2)
                 if cons.cons_tech_preference == 'brown':
-                    factor = cons_factor_j2_bg
+                    factor_c = cons_factor_j2_bg
+                    
                 else:
-                    factor = cons_factor_j2_gb
+                    factor_c = cons_factor_j2_gb
 
             elif cons.jurisdiction == 1:
                 other_cons = random.choice(self.consumers_j1)
                 if cons.cons_tech_preference == 'brown':
-                    factor = cons_factor_j1_bg
+                    factor_c = cons_factor_j1_bg
+                    
                 else:
-                    factor = cons_factor_j1_gb
+                    factor_c = cons_factor_j1_gb
 
-
-            cons_probs[cons] = (cons.cons_switch(other_cons), other_cons.cons_tech_preference)
+           # print('cons', factor_c, cons.cons_switch(other_cons), factor_c * cons.cons_switch(other_cons))
+            cons_probs[cons] = (factor_c * cons.cons_switch(other_cons), other_cons.cons_tech_preference)
            # cons.cons_switch(other_cons)
             
         # Do the actual consumer switching
         for cons, probs in cons_probs.items():
             number = random.random()
+            #print(probs[0], number)
             if probs[0] > number:
                 cons.cons_tech_preference = probs[1]
+
+
+
+        # Can add some random shock factor here. Every time step X% of the agents change preference.....
+        # shock = 0.01 #change to model parameter later
+        # change_prod = random.sample(self.producers, shock * self.producers)
+        # for prod in change_prod:
+        #     if prod.prod_tech_preference == 'brown':
+        #         prod.prod_tech_preference = 'green'
+        #     else:
+        #         prod.prod_tech_preference = 'brown'
+            
+
+
+                
+
         #super().__init__()
 
 
@@ -504,8 +532,9 @@ if __name__ == "__main__":
 
     # adoptj1 = 0
     # adoptj2 = 0
-    # model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.7, gamma=0.7, cost_brown=0.3, cost_green=0.45, ext_brown=0.1, ext_green=0.25, tax=0.2)
-    # for i in tqdm(range(150)):
+    # model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.5, gamma=1, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+    #                      tax=0.35, intensity=5)
+    # for i in tqdm(range(100)):
     #     model.step()
 
     # # Retrieve and plot data collected by the DataCollector
@@ -530,125 +559,128 @@ if __name__ == "__main__":
     # BETA/GAMMA HEATMAPS
 
     # tax_levels = [0.1,0.2,0.3,0.35]
-    # beta_vals = np.linspace(0,1,11)
-    # gamma_vals = np.linspace(0,1,11)
-    # # for tax in tax_levels:
-    # # strategy: save 4 matrices of data per agent/Jurisdiction combination.
-    # adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
-    # adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
-    # adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
-    # adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
+    beta_vals = np.linspace(0,1,11)
+    gamma_vals = np.linspace(0,1,11)
+    
+    adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
+    adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
+    adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
+    adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
 
-    # for i, beta in tqdm(enumerate(beta_vals)):
-    #     for j, gamma in enumerate(gamma_vals):
-    #         results_J1P = []
-    #         results_J1C = []
-    #         results_J2P = []
-    #         results_J2C = []
-    #         for k in range(30):  
-    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, tax=0.25)
-    #             for l in range(100):  
-    #                 model.step()
+    for i, beta in tqdm(enumerate(beta_vals)):
+        for j, gamma in enumerate(gamma_vals):
+            results_J1P = []
+            results_J1C = []
+            results_J2P = []
+            results_J2C = []
+            for k in range(30):  
+                model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+                                     tax=0.3,intensity=10)
+                for l in range(100):  
+                    model.step()
 
-    #             model_data =  model.datacollector.get_model_vars_dataframe()
-    #             results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
-    #             results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
-    #             results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
-    #             results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+                model_data =  model.datacollector.get_model_vars_dataframe()
+                results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+                results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+                results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+                results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-    #         adoption_J1P[j,i] = np.mean(results_J1P)
-    #         adoption_J1C[j,i] = np.mean(results_J1C)
-    #         adoption_J2P[j,i] = np.mean(results_J2P)
-    #         adoption_J2C[j,i] = np.mean(results_J2C)
+            adoption_J1P[j,i] = np.mean(results_J1P)
+            adoption_J1C[j,i] = np.mean(results_J1C)
+            adoption_J2P[j,i] = np.mean(results_J2P)
+            adoption_J2C[j,i] = np.mean(results_J2C)
 
-    # adoption_J1P = np.flipud(adoption_J1P)
-    # adoption_J1P = np.flipud(adoption_J1P)
-    # adoption_J1P = np.flipud(adoption_J1P)
-    # adoption_J1P = np.flipud(adoption_J1P)
-    # fig, axs = plt.subplots(1, 4, figsize=(8, 2))
+    adoption_J1P = np.flipud(adoption_J1P)
+    adoption_J1C = np.flipud(adoption_J1C)
+    adoption_J2P = np.flipud(adoption_J2P)
+    adoption_J2C = np.flipud(adoption_J2C)
+    fig, axs = plt.subplots(1, 4, figsize=(8, 2))
 
-    # im1 = axs[0].imshow(adoption_J1P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)], 
-    #                     vmin=0, vmax=1)  
-    # axs[0].set_title('Producers J1')
-    # axs[0].set_xlabel('Beta') 
-    # axs[0].set_ylabel('Gamma')
+    im1 = axs[0].imshow(adoption_J1P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+                        vmin=0, vmax=1)  
+    axs[0].set_title('Producers J1')
+    axs[0].set_xlabel('Beta') 
+    axs[0].set_ylabel('Gamma')
   
 
-    # im2 = axs[1].imshow(adoption_J1C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
-    #                     vmin=0, vmax=1)  
-    # axs[1].set_title('Consumers J1')
-    # axs[1].set_xlabel('Beta') 
+    im2 = axs[1].imshow(adoption_J1C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+                        vmin=0, vmax=1)  
+    axs[1].set_title('Consumers J1')
+    axs[1].set_xlabel('Beta') 
 
-    # im3 = axs[2].imshow(adoption_J2P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
-    #                     vmin=0, vmax=1)  
-    # axs[2].set_title('Producers J2')  
-    # axs[2].set_xlabel('Beta') 
+    im3 = axs[2].imshow(adoption_J2P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+                        vmin=0, vmax=1)  
+    axs[2].set_title('Producers J2')  
+    axs[2].set_xlabel('Beta') 
 
-    # im4 = axs[3].imshow(adoption_J2C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
-    #                     vmin=0, vmax=1)  
-    # axs[3].set_title('Consumers J2') 
-    # axs[3].set_xlabel('Beta') 
-    # #Add colorbar axis
-    # #cax = fig.add_axes([0.96, 0.15, 0.01, 0.7])  # [left, bottom, width, height]
+    im4 = axs[3].imshow(adoption_J2C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+                        vmin=0, vmax=1)  
+    axs[3].set_title('Consumers J2') 
+    axs[3].set_xlabel('Beta') 
+    #Add colorbar axis
+    #cax = fig.add_axes([0.96, 0.15, 0.01, 0.7])  # [left, bottom, width, height]
 
-    # # Add colorbar
-    # #cbar = fig.colorbar(im4, cax=cax)
+    # Add colorbar
+    #cbar = fig.colorbar(im4, cax=cax)
 
-    # #cbar = fig.colorbar(im4, ax=axs, fraction=0.05, pad=0.05, location='right')
+    #cbar = fig.colorbar(im4, ax=axs, fraction=0.05, pad=0.05, location='right')
 
-    # # Set label for the colorbar
-    # #cbar.set_label('Adoption rate')
-    # plt.tight_layout()
-    # plt.show()
+    # Set label for the colorbar
+    #cbar.set_label('Adoption rate')
+    plt.tight_layout()
+    plt.show()
+
 
 
     # ADOPTION AS A FUNCTION OF TAX
 
-    tax_values = np.linspace(0, 0.9, num=25)
-    # Dictionary to store the results
-    average_results_J1P = {}
-    average_results_J1C = {}
-    average_results_J2P = {}
-    average_results_J2C = {}
-    for tax_val in tqdm(tax_values):
-        results_J1P = []
-        results_J1C = []
-        results_J2P = []
-        results_J2C = []
-        for i in range(10):  
-            model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.5, gamma=0.5, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, tax=tax_val)
-            for j in range(100):  
-                model.step()
+    # tax_values = np.linspace(0, 1, num=25)
+    # # Dictionary to store the results
+    # average_results_J1P = {}
+    # average_results_J1C = {}
+    # average_results_J2P = {}
+    # average_results_J2C = {}
+    # for tax_val in tqdm(tax_values):
+    #     results_J1P = []
+    #     results_J1C = []
+    #     results_J2P = []
+    #     results_J2C = []
+    #     for i in range(30):  
+    #         model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.8, gamma=0.8, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, tax=tax_val)
+    #         for j in range(100):  
+    #             model.step()
 
-            model_data =  model.datacollector.get_model_vars_dataframe()
-            results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
-            results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
-            results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
-            results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+    #         model_data =  model.datacollector.get_model_vars_dataframe()
+    #         results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #         results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+    #         results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+    #         results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-        average_results_J1P[tax_val] = np.mean(results_J1P)
-        average_results_J1C[tax_val] = np.mean(results_J1C)
-        average_results_J2P[tax_val] = np.mean(results_J2P)
-        average_results_J2C[tax_val] = np.mean(results_J2C)
+    #     average_results_J1P[tax_val] = np.mean(results_J1P)
+    #     average_results_J1C[tax_val] = np.mean(results_J1C)
+    #     average_results_J2P[tax_val] = np.mean(results_J2P)
+    #     average_results_J2C[tax_val] = np.mean(results_J2C)
 
 
-    fig, axs = plt.subplots(2)
-    axs[0].plot(average_results_J1P.keys(), average_results_J1P.values(), label='J1')
-    axs[0].plot(average_results_J2P.keys(), average_results_J2P.values(), label='J2')
-    axs[0].set_title('Producers')
-    axs[0].set_xlabel('Tax') 
-    axs[0].set_ylabel('Adoption rate of green')
-    axs[0].legend()
+    # fig, axs = plt.subplots(2)
+    # axs[0].plot(average_results_J1P.keys(), average_results_J1P.values(), label='J1')
+    # axs[0].plot(average_results_J2P.keys(), average_results_J2P.values(), label='J2')
+    # axs[0].set_title('Producers')
+    # axs[0].set_xlabel('Tax') 
+    # axs[0].set_ylabel('Adoption rate of green')
+    # axs[0].legend()
 
-    axs[1].plot(average_results_J1C.keys(), average_results_J1C.values(), label='J1')
-    axs[1].plot(average_results_J2C.keys(), average_results_J2C.values(), label='J2')
-    axs[1].set_title('Consumers')
-    axs[1].set_xlabel('Tax') 
-    axs[1].set_ylabel('Adoption rate of green')
-    axs[1].legend()
+    # axs[1].plot(average_results_J1C.keys(), average_results_J1C.values(), label='J1')
+    # axs[1].plot(average_results_J2C.keys(), average_results_J2C.values(), label='J2')
+    # axs[1].set_title('Consumers')
+    # axs[1].set_xlabel('Tax') 
+    # axs[1].set_ylabel('Adoption rate of green')
+    # axs[1].legend()
 
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+
+
 
 
     # ADOPTION OF AS A FUNCTION OF COST
