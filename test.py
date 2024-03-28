@@ -3,22 +3,22 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-#print((1 + np.exp(-1 * (5))) ** - 1)
+print((1 + np.exp(-5 * (0.1))) ** - 1)
 
 #print((math.tanh(10/2*(-0.1))+1)/2)
 #print(0/0.001)
 
 
-beta_vals = np.linspace(0,1,11)
-gamma_vals = np.linspace(0,1,11)
-adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
-for i, beta in enumerate(beta_vals):
-    for j, gamma in enumerate(gamma_vals):
-        adoption_J1P[j,i] = (beta+gamma)
+# beta_vals = np.linspace(0,1,11)
+# gamma_vals = np.linspace(0,1,11)
+# adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
+# for i, beta in enumerate(beta_vals):
+#     for j, gamma in enumerate(gamma_vals):
+#         adoption_J1P[j,i] = (beta+gamma)
 
-adoption_J1P = np.flipud(adoption_J1P)
-plt.imshow(adoption_J1P, cmap='gray_r', extent=[0, 1, 0, 1])
-plt.show()
+# adoption_J1P = np.flipud(adoption_J1P)
+# plt.imshow(adoption_J1P, cmap='gray_r', extent=[0, 1, 0, 1])
+# plt.show()
 
 # beta_vals, gamma_vals = np.meshgrid(np.linspace(0, 1, 11), np.linspace(0, 1, 11))
 
