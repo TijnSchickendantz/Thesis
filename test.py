@@ -7,8 +7,6 @@ print((1 + np.exp(-5 * (0.1))) ** - 1)
 
 #print((math.tanh(10/2*(-0.1))+1)/2)
 #print(0/0.001)
-
-
 # beta_vals = np.linspace(0,1,11)
 # gamma_vals = np.linspace(0,1,11)
 # adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
