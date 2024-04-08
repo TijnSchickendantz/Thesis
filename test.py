@@ -6,13 +6,17 @@ import matplotlib.pyplot as plt
 #print((1 + np.exp(-1 * (-0.3))) ** - 1)
 
 
-rat5C = dict()
-numbs = [1,2,2,3]
-for n,i in enumerate(numbs):
-    if i not in rat5C:  # Make sure to add only 1 value per beta value and not overwrite
-        rat5C[i] = n
+# rat5C = dict()
+# numbs = [1,2,2,3]
+# for n,i in enumerate(numbs):
+#     if i not in rat5C:  # Make sure to add only 1 value per beta value and not overwrite
+#         rat5C[i] = n
 
-print(rat5C)
+# print(rat5C)
+
+A = 5 * 1 \
+    + 5 * 2
+print(A)
 #print((math.tanh(10/2*(-0.1))+1)/2)
 #print(0/0.001)
 # beta_vals = np.linspace(0,1,11)
