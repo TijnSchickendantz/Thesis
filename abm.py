@@ -21,7 +21,7 @@ class Consumer(Agent):
         self.benefit = 0.5 #random.uniform(0, 1)  # can make it random for heterogeneous agents
         self.ext_brown = ext_brown#random.uniform(0, 1) 
         self.ext_green = ext_green
-        self.price_green = 0.5 
+        self.price_green = 0.5
         self.price_brown = 0.5
         self.payoff = 0
         self.jurisdiction = jurisdiction #random.choice([1,2]) # every agent belongs to either jurisdiction
@@ -686,10 +686,11 @@ class Jurisdiction(Model):
         self.welfare_juris1 = (self.total_brown_producers_j1 * self.J1_brown_payoff) + (self.total_green_producers_j1 * self.J1_green_payoff) \
                         + (self.total_brown_consumers_j1 * self.J1_brown_payoff_c) + (self.total_green_consumers_j1 * self.J1_green_payoff_c) \
                         + (self.sales_brown_j1 * self.tax)  #- 0.2 * (self.sales_brown_j1 + len(self.subset_j1b) + self.sales_brown_j1 + len(self.subset_j2b))
+       
         #print(self.welfare_juris1)
         
         self.welfare_juris2 = self.total_brown_producers_j2 * self.J2_brown_payoff + self.total_green_producers_j2 * self.J2_green_payoff \
-                        + self.total_brown_consumers_j2 * self.J2_brown_payoff_c + self.total_green_consumers_j2 * self.J2_green_payoff_c \
+                        + self.total_brown_consumers_j2 * self.J2_brown_payoff_c + self.total_green_consumers_j2 * self.J2_green_payoff_c
                         #- 0.1 * (self.sales_brown_j1 + len(self.subset_j1b) + self.sales_brown_j1 + len(self.subset_j2b))
                         # - global externality
         #print(self.welfare_juris2)
@@ -725,9 +726,9 @@ if __name__ == "__main__":
 
     ############# SINGLE RUN
 
-    # model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.3, gamma=0.3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-    #                      tax=0.2, intensity=1)
-    # for i in tqdm(range(100)):
+    # model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.3, gamma=0.3, cost_brown=2.5, cost_green=4.5, ext_brown=1, ext_green=3, 
+    #                      tax=2, intensity=1)
+    # for i in tqdm(range(200)):
     #     model.step()
 
     # # Retrieve and plot data collected by the DataCollector
@@ -744,7 +745,7 @@ if __name__ == "__main__":
     # plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
     # plt.title('Adoption of green tech')
     # plt.xlabel('Steps')
-    # plt.ylabel('Welfare')
+    # plt.ylabel('adoption rate')
     # plt.legend()
     # #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
 
@@ -785,7 +786,7 @@ if __name__ == "__main__":
 
     ########## ALPHA/BETA/GAMMA HEATMAPS
 
-    # tax_levels = [0.1,0.2,0.3,0.35]
+    #tax_levels = [0.1,0.2,0.3,0.35]
     beta_vals = np.linspace(0,1,11)
     gamma_vals = np.linspace(0,1,11)
     
@@ -800,9 +801,9 @@ if __name__ == "__main__":
             results_J1C = []
             results_J2P = []
             results_J2C = []
-            for k in range(10):  
-                model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-                                     tax=0.2, intensity=5)
+            for k in range(30):  
+                model = Jurisdiction(n_consumers=300, n_producers=300, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+                                     tax=0.2, intensity=10)
                 for l in range(200):  
                     model.step()
 
@@ -911,10 +912,12 @@ if __name__ == "__main__":
 
 
     #################### TRANSITION PLOT
-#     tax_values = np.linspace(0, 0.35, num=15)
-#     #beta_values = np.linspace(0,1,num=25)
+    #tax_values = np.linspace(0, 0.35, num=15)
+    #beta_values = np.linspace(0,1,num=25)
 #     cost_b_vals = np.linspace(0.1,0.45,num=15)
-#     rat_vals = [5,10]
+#     rat_vals = [1,5,10,100]
+#     tolerance = 0.005
+#     adoption_level = 0.8
 
 #     rat1 = dict()
 #     rat5 = dict()
@@ -922,35 +925,48 @@ if __name__ == "__main__":
 #     rat100 = dict()
 #     for rat in rat_vals:
 #         for cb in tqdm(cost_b_vals):
-#             for tax in tax_values:
-#                 results_J2P = []
+#             min_tax = 0
+#             max_tax = 0.5
+#             while abs(max_tax - min_tax) > tolerance:
+#                 mid_tax = (min_tax + max_tax) / 2
 
-#                 for i in range(10):  
-#                     model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.2, gamma=0.2, cost_brown=cb, cost_green=0.45, 
-#                                          ext_brown=0.1, ext_green=0.3, tax=tax, intensity=rat)
+#                 results_J2P = []
+#                 for i in range(5):  
+#                     model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=3/4, gamma=3/4, cost_brown=cb, cost_green=0.45, 
+#                                          ext_brown=0.1, ext_green=0.3, tax=mid_tax, intensity=rat)
 #                     for j in range(200):  
 #                         model.step()
 
 #                     model_data =  model.datacollector.get_model_vars_dataframe()
 #                     results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
-                
-#                 if np.mean(results_J2P) >= 0.5:
-#                     if rat ==1:
-#                         rat1[cb] = tax
-#                     elif rat == 5:
-#                         rat5[cb] = tax
-#                     elif rat == 10:
-#                         rat10[cb] = tax
-#                     else:
-#                         rat100[cb] = tax
-#                     break # we dont need to check for more tax values for this cost value
 
-#     #plt.plot(rat1.keys(), rat1.values(), label='rat1')
+                
+#                 if np.mean(results_J2P) < adoption_level:
+#                     min_tax = mid_tax
+#                 else:
+#                     max_tax = mid_tax
+            
+#             if max_tax != 0.5:
+#                 if rat == 1:
+#                     rat1[cb] = max_tax
+#                 elif rat == 5:
+#                     rat5[cb] = max_tax
+#                 elif rat == 10:
+#                     rat10[cb] = max_tax
+#                 else:
+#                     rat100[cb] = max_tax
+#                 #break # we dont need to check for more tax values for this cost value
+
+#     plt.plot(rat1.keys(), rat1.values(), label='rat1')
 #     plt.plot(rat5.keys(), rat5.values(), label='rat5')
 #     plt.plot(rat10.keys(), rat10.values(), label='rat10')
-#     #plt.plot(rat100.keys(), rat100.values(), label='rat100')
+#     plt.plot(rat100.keys(), rat100.values(), label='rat100')
+#     y = [0.45 - x_val for x_val in cost_b_vals]  # Calculate y values based on the sum of x and y equaling 0.45
+#     plt.plot(cost_b_vals, y, color='black', linestyle='--', label='costB + tax = costG')
+
 #     plt.xlabel('Cost Brown')
 #     plt.ylabel('Tax')
+#     plt.ylim(0, 0.5) 
 #    # plt.title('Tax Values for Different Cost Brown (rat5 and rat10)')
 #     plt.legend()
 #     plt.show()
@@ -960,11 +976,13 @@ if __name__ == "__main__":
 
     # #################### MIN TAX FOR X% ADOPTION
 
-    # tax_values = np.linspace(0.15, 0.30, num=15)
+    #tax_values = np.linspace(0.15, 0.30, num=15)
     # beta_values = np.linspace(0,1,num=11)
-    # alpha_values = np.linspace(0,1,num=11)
+    # #alpha_values = np.linspace(0,1,num=11)
     
-    # rat_vals = [5,10]
+    # rat_vals = [1,5,10,100]
+    # tolerance = 0.005
+    # adoption_level = 0.8
 
     # #DICTS
     # rat1P1 = dict()
@@ -975,65 +993,85 @@ if __name__ == "__main__":
     # rat10P2 = dict()
     # rat100P1 = dict()
     # rat100P2 = dict()
-    # adopt_level = 0.3
+
 
     # for rat in rat_vals:
-    #     for alpha in tqdm(alpha_values):
-    #         for tax in tax_values:
-    #             results_P1 = []
+    #     for beta in tqdm(beta_values):
+    #         min_tax = 0
+    #         max_tax = 0.5
+    #         while abs(max_tax - min_tax) > tolerance:
+    #             mid_tax = (min_tax + max_tax) / 2
+
+    #             #results_P1 = []
     #             results_P2 = []
     #             #results_J1 = []
     #             #results_J2 = []
     #             for i in range(10):  
-    #                 model = Jurisdiction(n_consumers=500, n_producers=500, alpha=alpha, beta=0.3, gamma=0.3, cost_brown=0.25, cost_green=0.45, 
-    #                                      ext_brown=0.1, ext_green=0.3, tax=tax, intensity=rat)
+    #                 model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=1, cost_brown=0.25, cost_green=0.45, 
+    #                                      ext_brown=0.1, ext_green=0.3, tax=mid_tax, intensity=rat)
     #                 for j in range(200):  
     #                     model.step()
 
     #                 model_data =  model.datacollector.get_model_vars_dataframe()
-    #                 results_P1.append(model_data['Percentage green Consumers J1'].iloc[-1])
+    #                 #results_P1.append(model_data['Percentage green Consumers J1'].iloc[-1])
     #                 results_P2.append(model_data['Percentage green Consumers J2'].iloc[-1])
     #                 # results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
     #                 # results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-    #             if np.mean(results_P1) >= adopt_level:
-    #                 if rat == 1:
-    #                     if alpha not in rat1P1:
-    #                         rat1P1[alpha] = tax
-    #                 elif rat == 5:
-    #                     if alpha not in rat5P1:  # Make sure to add only 1 value per beta value and not overwrite
-    #                         rat5P1[alpha] = tax
-    #                 elif rat == 10:
-    #                     if alpha not in rat10P1:
-    #                         rat10P1[alpha] = tax
-    #                 else:
-    #                     if alpha not in rat100P1:
-    #                         rat100P1[alpha] = tax
+    #             if np.mean(results_P2) < adoption_level:
+    #                 min_tax = mid_tax
+    #             else:
+    #                 max_tax = mid_tax
+
+    #         if max_tax != 0.5:
+    #             if rat == 1:
+    #                 if beta not in rat1P1:
+    #                     rat1P1[beta] = max_tax
+    #             elif rat == 5:
+    #                 if beta not in rat5P1:  # Make sure to add only 1 value per beta value and not overwrite
+    #                     rat5P1[beta] = max_tax
+    #             elif rat == 10:
+    #                 if beta not in rat10P1:
+    #                     rat10P1[beta] = max_tax
+    #             else:
+    #                 if beta not in rat100P1:
+    #                     rat100P1[beta] = max_tax
                         
-    #             if np.mean(results_P2) >= adopt_level:
-    #                 if rat == 1:
-    #                     if alpha not in rat1P2:
-    #                         rat1P2[alpha] = tax
-    #                 elif rat == 5:
-    #                     if alpha not in rat5P2:  # Make sure to add only 1 value per beta value and not overwrite
-    #                         rat5P2[alpha] = tax
-    #                 elif rat == 10:
-    #                     if alpha not in rat10P2:
-    #                         rat10P2[alpha] = tax
-    #                 else:
-    #                     if alpha not in rat100P2:
-    #                         rat100P2[alpha] = tax
+    #             #     if rat == 1:
+    #             #         if beta not in rat1P2:
+    #             #             rat1P2[beta] = tax
+    #             #     elif rat == 5:
+    #             #         if beta not in rat5P2:  # Make sure to add only 1 value per beta value and not overwrite
+    #             #             rat5P2[beta] = tax
+    #             #     elif rat == 10:
+    #             #         if beta not in rat10P2:
+    #             #             rat10P2[beta] = tax
+    #             #     else:
+    #             #         if beta not in rat100P2:
+    #             #             rat100P2[beta] = tax
 
-    #             if np.mean(results_P1) >= adopt_level and np.mean(results_P2) >= adopt_level:
-    #                 break
+    #             # if np.mean(results_P1) >= adopt_level and np.mean(results_P2) >= adopt_level:
+    #             #     break
 
-                    
+    
+    # plt.plot(rat1P1.keys(), rat1P1.values(), label='rat1')
+    # plt.plot(rat5P1.keys(), rat5P1.values(), label='rat5')
+    # plt.plot(rat10P1.keys(), rat10P1.values(), label='rat10')
+    # plt.plot(rat100P1.keys(), rat100P1.values(), label='rat100')
+    # plt.axhline(y=0.2, color='black', linestyle='--', label='tax + cost brown = cost green')
+    # plt.xlabel('Beta')
+    # plt.ylabel('Tax')
+    # plt.ylim(0, 0.5)
+    # #plt.title('Min tax for', adoption_level, 'adoption')
+    # plt.legend()
+    # plt.show()
+
     # fig, axes = plt.subplots(1, 2)
     # #axes[0].plot(rat1P1.keys(), rat1P1.values(), label='rat1 Cons J1')
     # axes[0].plot(rat5P1.keys(), rat5P1.values(), label='rat5 cons J1')
     # axes[0].plot(rat10P1.keys(), rat10P1.values(), label='rat10 cons J1')
     # #axes[0].plot(rat100P1.keys(), rat100P1.values(), label='rat100 Cons J1')
-    # axes[0].set_xlabel('Alpha')
+    # axes[0].set_xlabel('Beta')
     # axes[0].set_ylabel('Tax')
     # axes[0].legend()
 
@@ -1041,7 +1079,7 @@ if __name__ == "__main__":
     # axes[1].plot(rat5P2.keys(), rat5P2.values(), label='rat5 cons J2')
     # axes[1].plot(rat10P2.keys(), rat10P2.values(), label='rat10 cons J2')
     # #axes[1].plot(rat100P2.keys(), rat100P2.values(), label='rat100 Cons J2')
-    # axes[1].set_xlabel('Alpha')
+    # axes[1].set_xlabel('Beta')
     # axes[1].set_ylabel('Tax')
     # axes[1].legend()
 
@@ -1055,70 +1093,86 @@ if __name__ == "__main__":
 
 #     tax_values = np.linspace(0, 0.4, num=15)
 #     # Dictionary to store the results
+#     J1_1 = {}
+#     J2_1 = {}
 #     J1_5 = {}
 #     J2_5 = {}
 #     J1_10 = {}
 #     J2_10 = {}
-#     diff_5 = {}
-#     diff_10 = {}
-#     rats = [5,10]
+#     J1_100 = {}
+#     J2_100 = {}
+#     #diff_5 = {}
+#     #diff_10 = {}
+#     rats = [1,5,10,100]
 #     for rat in rats:
 #         for tax_val in tqdm(tax_values):
-#             #results_J1 = []
-#             #results_J2 = []
-#             diffs = []
-#             for i in range(1):  
-#                 model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0.8, beta=0.3, gamma=0.3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+#             results_J1 = []
+#             results_J2 = []
+#             #diffs = []
+#             for i in range(30):  
+#                 model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.8, gamma=0.8, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
 #                                     tax=tax_val,intensity=rat)
-#                 for j in range(5):  
+#                 for j in range(200):  
 #                     model.step()
 
 #                 model_data =  model.datacollector.get_model_vars_dataframe()
-#                 #results_J1.append(model_data['welfare jurisdiction 1'].iloc[-1])
-#                 #results_J2.append(model_data['welfare jurisdiction 2'].iloc[-1])
+#                 results_J1.append(model_data['welfare jurisdiction 1'].iloc[-1])
+#                 results_J2.append(model_data['welfare jurisdiction 2'].iloc[-1])
 #                 #print(model_data['welfare jurisdiction 1'].iloc[-1] / model_data['welfare jurisdiction 2'].iloc[-1])
 #                 #print(model_data['welfare jurisdiction 2'].iloc[-1])
-#                 diffs.append(model_data['welfare jurisdiction 1'].iloc[-1] / model_data['welfare jurisdiction 2'].iloc[-1])
+#                 #diffs.append(model_data['welfare jurisdiction 1'].iloc[-1] / model_data['welfare jurisdiction 2'].iloc[-1])
 
 #            # print(np.mean(diffs))
-#             if rat == 5:
-#                 #J1_5[tax_val] = np.mean(results_J1)
-#                 #J2_5[tax_val] = np.mean(results_J2)
-#                 diff_5[tax_val] = np.mean(diffs)
+#             if rat == 1:
+#                 J1_1[tax_val] = np.mean(results_J1)
+#                 J2_1[tax_val] = np.mean(results_J2)
+#             elif rat == 5:
+#                 J1_5[tax_val] = np.mean(results_J1)
+#                 J2_5[tax_val] = np.mean(results_J2)
+#                 #diff_5[tax_val] = np.mean(diffs)
+#             elif rat == 10:
+#                 J1_10[tax_val] = np.mean(results_J1)
+#                 J2_10[tax_val] = np.mean(results_J2)
 #             else:
-#                 #J1_10[tax_val] = np.mean(results_J1)
-#                 #J2_10[tax_val] = np.mean(results_J2)
-#                 diff_10[tax_val] = np.mean(diffs)
+#                 J1_100[tax_val] = np.mean(results_J1)
+#                 J2_100[tax_val] = np.mean(results_J2)
+#                 #diff_10[tax_val] = np.mean(diffs)
 #             #print(diff_5)
 #            # print(diff_10)
 
-#     plt.plot(diff_5.keys(), diff_5.values(), label='rat5')
-#     plt.plot(diff_10.keys(), diff_10.values(), label='rat10')
+# #     plt.plot(diff_5.keys(), diff_5.values(), label='rat5')
+# #     plt.plot(diff_10.keys(), diff_10.values(), label='rat10')
 
-#     plt.xlabel('Tax')
-#     plt.ylabel('Welfare J1 / Welfare J2')
-#    # plt.title('Tax Values for Different Cost Brown (rat5 and rat10)')
-#     plt.legend()
-#     plt.show()
+# #     plt.xlabel('Tax')
+# #     plt.ylabel('Welfare J1 / Welfare J2')
+# #    # plt.title('Tax Values for Different Cost Brown (rat5 and rat10)')
+# #     plt.legend()
+# #     plt.show()
     
-    # fig, axs = plt.subplots(2)
-    # axs[0].plot(J1_5.keys(), J1_5.values(), label='rat=5')
-    # axs[0].plot(J1_10.keys(), J1_10.values(), label='rat=10')
-    # axs[0].plot(diff_5.keys(), diff_5.values(), label='ra=5')
-    # axs[0].set_title('Jurisdiction 1')
-    # axs[0].set_xlabel('Tax') 
-    # axs[0].set_ylabel('Welfare')
-    # axs[0].legend()
+#     fig, axs = plt.subplots(2)
+#     axs[0].plot(J1_1.keys(), J1_1.values(), label='rat=1')
+#     axs[0].plot(J1_5.keys(), J1_5.values(), label='rat=5')
+#     axs[0].plot(J1_10.keys(), J1_10.values(), label='rat=10')
+#     axs[0].plot(J1_100.keys(), J1_100.values(), label='rat=100')
+#     #axs[0].plot(diff_5.keys(), diff_5.values(), label='ra=5')
+#     axs[0].set_title('Jurisdiction 1')
+#     axs[0].set_xlabel('Tax') 
+#     axs[0].set_ylabel('Welfare')
+#     axs[0].set_ylim(40, 120) 
+#     axs[0].legend()
 
-    # axs[1].plot(J2_5.keys(), J2_5.values(), label='rat=5')
-    # axs[1].plot(J2_10.keys(), J2_10.values(), label='rat=10')
-    # axs[1].set_title('Jurisdiction 2')
-    # axs[1].set_xlabel('Tax') 
-    # axs[1].set_ylabel('Welfare')
-    # axs[1].legend()
+#     axs[1].plot(J2_1.keys(), J2_1.values(), label='rat=1')
+#     axs[1].plot(J2_5.keys(), J2_5.values(), label='rat=5')
+#     axs[1].plot(J2_10.keys(), J2_10.values(), label='rat=10')
+#     axs[1].plot(J2_100.keys(), J2_100.values(), label='rat=100')
+#     axs[1].set_title('Jurisdiction 2')
+#     axs[1].set_xlabel('Tax') 
+#     axs[1].set_ylabel('Welfare')
+#     axs[1].set_ylim(40, 120) 
+#     axs[1].legend()
 
-    # plt.tight_layout()
-    # plt.show()
+#     plt.tight_layout()
+#     plt.show()
 
 
 

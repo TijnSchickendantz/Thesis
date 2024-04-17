@@ -3,7 +3,7 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-#print((1 + np.exp(-1 * (-0.3))) ** - 1)
+print((1 + np.exp(-1 * (-2))) ** - 1)
 
 
 # rat5C = dict()
@@ -14,9 +14,7 @@ import matplotlib.pyplot as plt
 
 # print(rat5C)
 
-A = 5 * 1 \
-    + 5 * 2
-print(A)
+
 #print((math.tanh(10/2*(-0.1))+1)/2)
 #print(0/0.001)
 # beta_vals = np.linspace(0,1,11)
