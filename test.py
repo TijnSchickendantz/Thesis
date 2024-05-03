@@ -2,8 +2,42 @@ import numpy as np
 import random
 import math
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-print((1 + np.exp(-1 * (-2))) ** - 1)
+
+# Generate example data (replace this with your simulation results)
+initial_conditions_j1 = np.linspace(0, 1, 10)
+initial_conditions_j2 = np.linspace(0, 1, 10)
+#average_adoption_rates = np.random.rand(10, 10)  # Example random data
+
+X, Y = np.meshgrid(initial_conditions_j1, initial_conditions_j2)
+
+# Calculate the outcome for each initial condition
+outcomes = np.where(X < Y, 0, 1)  # Values to the left of the diagonal go to 0, and to the right go to 1
+
+plt.figure(figsize=(5, 5))
+
+# Plot initial condition values
+plt.scatter(X, Y, color='blue', label='Initial Conditions')
+
+# Draw arrows towards the outcome
+for i in range(len(initial_conditions_j1)):
+    for j in range(len(initial_conditions_j2)):
+        if outcomes[j, i] == 0:
+            plt.arrow(X[j, i], Y[j, i], 0.1, 0.1, color='red', head_width=0.03, head_length=0.05)
+        else:
+            plt.arrow(X[j, i], Y[j, i], -0.1, -0.1, color='red', head_width=0.03, head_length=0.05)
+
+plt.title('Phase Diagram: Initial Conditions and Outcome Arrows')
+plt.xlabel('Initial Condition for Jurisdiction 1')
+plt.ylabel('Initial Condition for Jurisdiction 2')
+plt.xlim(0, 1)
+plt.ylim(0, 1)
+plt.legend()
+plt.grid(True)
+plt.show()
+
+#print((1 + np.exp(-1 * (-0.5))) ** - 1)
 
 
 # rat5C = dict()
