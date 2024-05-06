@@ -6,38 +6,68 @@ import seaborn as sns
 
 
 # Generate example data (replace this with your simulation results)
-initial_conditions_j1 = np.linspace(0, 1, 10)
-initial_conditions_j2 = np.linspace(0, 1, 10)
-#average_adoption_rates = np.random.rand(10, 10)  # Example random data
+# initial_conditions_j1 = np.linspace(0, 1, 10)
+# initial_conditions_j2 = np.linspace(0, 1, 10)
+# #average_adoption_rates = np.random.rand(10, 10)  # Example random data
 
-X, Y = np.meshgrid(initial_conditions_j1, initial_conditions_j2)
+# X, Y = np.meshgrid(initial_conditions_j1, initial_conditions_j2)
 
 # Calculate the outcome for each initial condition
-outcomes = np.where(X < Y, 0, 1)  # Values to the left of the diagonal go to 0, and to the right go to 1
+# outcomes = np.where(X < Y, 0, 1)  # Values to the left of the diagonal go to 0, and to the right go to 1
 
-plt.figure(figsize=(5, 5))
+# plt.figure(figsize=(5, 5))
 
-# Plot initial condition values
-plt.scatter(X, Y, color='blue', label='Initial Conditions')
+# # Plot initial condition values
+# plt.scatter(X, Y, color='blue', label='Initial Conditions')
 
-# Draw arrows towards the outcome
-for i in range(len(initial_conditions_j1)):
-    for j in range(len(initial_conditions_j2)):
-        if outcomes[j, i] == 0:
-            plt.arrow(X[j, i], Y[j, i], 0.1, 0.1, color='red', head_width=0.03, head_length=0.05)
-        else:
-            plt.arrow(X[j, i], Y[j, i], -0.1, -0.1, color='red', head_width=0.03, head_length=0.05)
+# # Draw arrows towards the outcome
+# for i in range(len(initial_conditions_j1)):
+#     for j in range(len(initial_conditions_j2)):
+#         if outcomes[j, i] == 0:
+#             plt.arrow(X[j, i], Y[j, i], 0.1, 0.1, color='red', head_width=0.03, head_length=0.05)
+#         else:
+#             plt.arrow(X[j, i], Y[j, i], -0.1, -0.1, color='red', head_width=0.03, head_length=0.05)
 
-plt.title('Phase Diagram: Initial Conditions and Outcome Arrows')
-plt.xlabel('Initial Condition for Jurisdiction 1')
-plt.ylabel('Initial Condition for Jurisdiction 2')
-plt.xlim(0, 1)
-plt.ylim(0, 1)
+# plt.title('Phase Diagram: Initial Conditions and Outcome Arrows')
+# plt.xlabel('Initial Condition for Jurisdiction 1')
+# plt.ylabel('Initial Condition for Jurisdiction 2')
+# plt.xlim(0, 1)
+# plt.ylim(0, 1)
+# plt.legend()
+# plt.grid(True)
+# plt.show()
+
+
+# payoff = 0.3
+# av=0.2
+# rat=1
+
+# print((1 + np.exp(-rat * (av - payoff))) ** - 1)
+
+def sigmoid_function(av_payoff, rat):
+    return (1 + np.exp(-rat * av_payoff)) ** -1
+
+# Generate x values (av_payoff) from -1 to 1
+x_values = np.linspace(-1, 1, 100)
+
+# Values of rat
+rat_values = [1, 10, 100]
+
+# Create the plot
+plt.figure(figsize=(6, 4))
+
+# Plot the function for each value of rat
+for rat in rat_values:
+    y_values = sigmoid_function(x_values, rat)
+    plt.plot(x_values, y_values, label=f'rat = {rat}')
+
+# Add labels and legend
+#plt.title('Sigmoid Function for Different Values of rat')
+plt.xlabel('payoff difference')
+plt.ylabel('Probability of switching')
 plt.legend()
-plt.grid(True)
+#plt.grid(True)
 plt.show()
-
-#print((1 + np.exp(-1 * (-0.5))) ** - 1)
 
 
 # rat5C = dict()

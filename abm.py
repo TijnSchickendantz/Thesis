@@ -106,7 +106,8 @@ class Producer(Agent):
 # JURISDICTION CLASS
 class Jurisdiction(Model):
 
-    def __init__(self, n_producers, n_consumers,alpha,beta,gamma, cost_brown, cost_green, ext_brown, ext_green, tax, intensity_c, intensity_p):
+    def __init__(self, n_producers, n_consumers,alpha,beta,gamma, cost_brown, cost_green, ext_brown, ext_green, 
+                 tax, intensity_c, intensity_p, init_c1, init_c2, init_p1, init_p2):
 
         self.tax = tax
         self.alpha = alpha
@@ -114,6 +115,12 @@ class Jurisdiction(Model):
         self.gamma = gamma
         self.intensity_c = intensity_c 
         self.intensity_p = intensity_p
+        self.init_c1 = init_c1
+        self.init_c2 = init_c2
+        self.init_p1 = init_p1
+        self.init_p2 = init_p2
+        
+        
 
         self.schedule = RandomActivation(self)
 
@@ -146,14 +153,14 @@ class Jurisdiction(Model):
         # Create consumers
         for i in range(n_consumers):
             jurisdiction = 1 if i < (n_consumers * 0.5) else 2
-            tech_pref = 'green' if (i <= n_consumers * 0.05 or i >= n_consumers * 0.95) else 'brown'
+            tech_pref = 'green' if (i <= n_consumers * self.init_c1 or i >= n_consumers * self.init_c2) else 'brown'
             consumer = Consumer(i, self, tech_pref, jurisdiction, ext_brown, ext_green, intensity_c)
             self.schedule.add(consumer)
         
         # Create producers
         for i in range(n_producers):
             jurisdiction = 1 if i < (n_producers * 0.5) else 2
-            tech_pref = 'green' if (i <= n_producers * 0.05 or i >= n_producers * 0.95) else 'brown'
+            tech_pref = 'green' if (i <= n_producers * self.init_p1 or i >= n_producers * self.init_p2) else 'brown'
             producer = Producer(n_consumers + i, self, tech_pref, jurisdiction, cost_brown, cost_green, tax, intensity_p)
             self.schedule.add(producer)
 
@@ -739,7 +746,7 @@ if __name__ == "__main__":
     ############# SINGLE RUN
 
     model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0.5, beta=0.5, gamma=1/3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-                         tax=0.15, intensity_c=10, intensity_p = 10)
+                         tax=0.2, intensity_c=10, intensity_p=10, init_c1=0.10, init_c2=0.95, init_p1=0.1, init_p2=0.95)
     for i in tqdm(range(100)):
         model.step()
 
@@ -751,10 +758,10 @@ if __name__ == "__main__":
     #plt.plot(model_data['welfare jurisdiction 1'], label='welfare J1')
     #plt.plot(model_data['welfare jurisdiction 2'], label='welfare J2')
 
-    plt.plot(model_data['Percentage green Producers J1'], label='Percentage Green Producers J1', color='indianred')
-    plt.plot(model_data['Percentage green Consumers J1'], label='Percentage Green Consumers J1', color='darkred')
-    plt.plot(model_data['Percentage green Producers J2'], label='Percentage Green Producers J2', color='deepskyblue')
-    plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
+    plt.plot(model_data['Percentage green Producers J1'], label='Producers J1', color='indianred')
+    plt.plot(model_data['Percentage green Consumers J1'], label='Consumers J1', color='darkred')
+    plt.plot(model_data['Percentage green Producers J2'], label='Producers J2', color='deepskyblue')
+    plt.plot(model_data['Percentage green Consumers J2'], label='Consumers J2', color='royalblue')
 
     # plt.plot(model_data["brown payoff producers J1"], label='producers O', color='deepskyblue')
     # plt.plot(model_data["green payoff producers J1"], label='producers N', color='royalblue')
@@ -766,7 +773,7 @@ if __name__ == "__main__":
     plt.xlabel('Time')
     #plt.ylim(-0.25, 0.35) 
     #plt.ylabel('Average payoff')
-    #plt.ylabel("Adoption rate")
+    plt.ylabel("Adoption rate of N")
     plt.legend()
     #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
 
@@ -808,77 +815,77 @@ if __name__ == "__main__":
     ########## ALPHA/BETA/GAMMA HEATMAPS
 
     # # tax_levels = [0.1,0.2,0.3,0.35]
-    beta_vals = np.linspace(0,1,11)
-    gamma_vals = np.linspace(0,1,11)
-    alpha_vals = np.linspace(0,1,11)
+    # beta_vals = np.linspace(0,1,11)
+    # gamma_vals = np.linspace(0,1,11)
+    # alpha_vals = np.linspace(0,1,11)
     
-    adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
-    adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
-    adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
-    adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
+    # adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
+    # adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
+    # adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
+    # adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
 
-    for i, beta in tqdm(enumerate(beta_vals)):
-        for j, gamma in enumerate(gamma_vals):
-            results_J1P = []
-            results_J1C = []
-            results_J2P = []
-            results_J2C = []
-            for k in range(10):  
-                model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-                                     tax=0.15, intensity_c=5, intensity_p=100)
-                for l in range(200):  
-                    model.step()
+    # for i, beta in tqdm(enumerate(beta_vals)):
+    #     for j, gamma in enumerate(gamma_vals):
+    #         results_J1P = []
+    #         results_J1C = []
+    #         results_J2P = []
+    #         results_J2C = []
+    #         for k in range(10):  
+    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+    #                                  tax=0.2, intensity_c=1, intensity_p=100)
+    #             for l in range(200):  
+    #                 model.step()
 
-                model_data =  model.datacollector.get_model_vars_dataframe()
-                results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
-                results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
-                results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
-                results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+    #             model_data =  model.datacollector.get_model_vars_dataframe()
+    #             results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #             results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+    #             results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+    #             results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-            adoption_J1P[j,i] = np.mean(results_J1P)
-            adoption_J1C[j,i] = np.mean(results_J1C)
-            adoption_J2P[j,i] = np.mean(results_J2P)
-            adoption_J2C[j,i] = np.mean(results_J2C)
+    #         adoption_J1P[j,i] = np.mean(results_J1P)
+    #         adoption_J1C[j,i] = np.mean(results_J1C)
+    #         adoption_J2P[j,i] = np.mean(results_J2P)
+    #         adoption_J2C[j,i] = np.mean(results_J2C)
 
-    adoption_J1P = np.flipud(adoption_J1P)
-    adoption_J1C = np.flipud(adoption_J1C)
-    adoption_J2P = np.flipud(adoption_J2P)
-    adoption_J2C = np.flipud(adoption_J2C)
-    fig, axs = plt.subplots(1, 4, figsize=(8, 2))
+    # adoption_J1P = np.flipud(adoption_J1P)
+    # adoption_J1C = np.flipud(adoption_J1C)
+    # adoption_J2P = np.flipud(adoption_J2P)
+    # adoption_J2C = np.flipud(adoption_J2C)
+    # fig, axs = plt.subplots(1, 4, figsize=(8, 2))
 
-    im1 = axs[0].imshow(adoption_J1P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
-                        vmin=0, vmax=1)  
-    axs[0].set_title('Producers J1')
-    axs[0].set_xlabel('Beta') 
-    axs[0].set_ylabel('Gamma')
+    # im1 = axs[0].imshow(adoption_J1P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+    #                     vmin=0, vmax=1)  
+    # axs[0].set_title('Producers J1')
+    # axs[0].set_xlabel('Beta') 
+    # axs[0].set_ylabel('Gamma')
   
 
-    im2 = axs[1].imshow(adoption_J1C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
-                        vmin=0, vmax=1)  
-    axs[1].set_title('Consumers J1')
-    axs[1].set_xlabel('Beta') 
+    # im2 = axs[1].imshow(adoption_J1C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+    #                     vmin=0, vmax=1)  
+    # axs[1].set_title('Consumers J1')
+    # axs[1].set_xlabel('Beta') 
 
-    im3 = axs[2].imshow(adoption_J2P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
-                        vmin=0, vmax=1)  
-    axs[2].set_title('Producers J2')  
-    axs[2].set_xlabel('Beta') 
+    # im3 = axs[2].imshow(adoption_J2P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+    #                     vmin=0, vmax=1)  
+    # axs[2].set_title('Producers J2')  
+    # axs[2].set_xlabel('Beta') 
 
-    im4 = axs[3].imshow(adoption_J2C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
-                        vmin=0, vmax=1)  
-    axs[3].set_title('Consumers J2') 
-    axs[3].set_xlabel('Beta') 
-    #Add colorbar axis
-    #cax = fig.add_axes([0.96, 0.15, 0.01, 0.7])  # [left, bottom, width, height]
+    # im4 = axs[3].imshow(adoption_J2C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+    #                     vmin=0, vmax=1)  
+    # axs[3].set_title('Consumers J2') 
+    # axs[3].set_xlabel('Beta') 
+    # #Add colorbar axis
+    # #cax = fig.add_axes([0.96, 0.15, 0.01, 0.7])  # [left, bottom, width, height]
 
-    # Add colorbar
-    #cbar = fig.colorbar(im4, cax=cax)
+    # # Add colorbar
+    # #cbar = fig.colorbar(im4, cax=cax)
 
-    #cbar = fig.colorbar(im4, ax=axs, fraction=0.05, pad=0.05, location='right')
+    # #cbar = fig.colorbar(im4, ax=axs, fraction=0.05, pad=0.05, location='right')
 
-    # Set label for the colorbar
-    #cbar.set_label('Adoption rate')
-    plt.tight_layout()
-    plt.show()
+    # # Set label for the colorbar
+    # #cbar.set_label('Adoption rate')
+    # plt.tight_layout()
+    # plt.show()
 
 
 
@@ -1292,4 +1299,53 @@ if __name__ == "__main__":
 
 
 # PHASE DIAGRAM FOR INITIAL CONDITIONS
+    j1_vals = np.linspace(0,0.5,11)
+    j2_vals = np.linspace(0,0.5,11)
+    
+    adoption_J2P = np.zeros((len(j1_vals), len(j2_vals)))
+
+    for i, j1_val in tqdm(enumerate(j1_vals)):
+        for j, j2_val in enumerate(j2_vals):
+            results_J2P = []
+            for k in range(10):  
+                model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=1/3, gamma=1/3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+                                     tax=0.2, intensity_c=10, intensity_p=10, init_c1=j1_val, init_c2= 1-j2_val, init_p1=j1_val, init_p2=1-j2_val)
+                for l in range(200):  
+                    model.step()
+
+                model_data =  model.datacollector.get_model_vars_dataframe()
+                results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+
+            adoption_J2P[j,i] = np.mean(results_J2P)
+
+    adoption_J2P = np.flipud(adoption_J2P)
+
+    # fig, axs = plt.subplots(1, 4, figsize=(8, 2))
+
+
+    # im1 = axs[0].imshow(adoption_J2P, cmap='gray_r', extent=[min(j1_vals), max(j1_vals), min(j2_vals), max(j2_vals)],
+    #                     vmin=0, vmax=1)  
+    # axs[0].set_title('Producers J1')
+    # axs[0].set_xlabel('Beta') 
+    # axs[0].set_ylabel('Gamma')
+
+    plt.imshow(adoption_J2P, cmap='gray_r', extent=[min(j1_vals), max(j1_vals), min(j2_vals), max(j2_vals)],
+               vmin=0, vmax=1)
+    plt.xticks(ticks=plt.xticks()[0], labels=[f'{2*x:.1f}' for x in plt.xticks()[0]])
+    plt.yticks(ticks=plt.yticks()[0], labels=[f'{2*y:.1f}' for y in plt.yticks()[0]])
+    plt.xlabel('J1')
+    plt.ylabel('J2')
+  
+    #Add colorbar axis
+    #cax = fig.add_axes([0.96, 0.15, 0.01, 0.7])  # [left, bottom, width, height]
+
+    # Add colorbar
+    #cbar = fig.colorbar(im4, cax=cax)
+
+    #cbar = fig.colorbar(im4, ax=axs, fraction=0.05, pad=0.05, location='right')
+
+    # Set label for the colorbar
+    #cbar.set_label('Adoption rate')
+    plt.tight_layout()
+    plt.show()  
 
