@@ -8,6 +8,7 @@ vals = [0.43,0.5,0.45,0.39,0.45]
 print(np.mean(vals))
 print(np.std(vals))
 
+print(round(0.22,1))
 
 # Generate example data (replace this with your simulation results)
 # initial_conditions_j1 = np.linspace(0, 1, 10)
