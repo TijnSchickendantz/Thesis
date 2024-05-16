@@ -4,6 +4,10 @@ import math
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+vals = [0.43,0.5,0.45,0.39,0.45]
+print(np.mean(vals))
+print(np.std(vals))
+
 
 # Generate example data (replace this with your simulation results)
 # initial_conditions_j1 = np.linspace(0, 1, 10)
@@ -37,37 +41,36 @@ import seaborn as sns
 # plt.grid(True)
 # plt.show()
 
-
 # payoff = 0.3
 # av=0.2
 # rat=1
 
 # print((1 + np.exp(-rat * (av - payoff))) ** - 1)
 
-def sigmoid_function(av_payoff, rat):
-    return (1 + np.exp(-rat * av_payoff)) ** -1
+# def sigmoid_function(av_payoff, rat):
+#     return (1 + np.exp(-rat * av_payoff)) ** -1
 
-# Generate x values (av_payoff) from -1 to 1
-x_values = np.linspace(-1, 1, 100)
+# # Generate x values (av_payoff) from -1 to 1
+# x_values = np.linspace(-1, 1, 100)
 
-# Values of rat
-rat_values = [1, 10, 100]
+# # Values of rat
+# rat_values = [1, 10, 100]
 
-# Create the plot
-plt.figure(figsize=(6, 4))
+# # Create the plot
+# plt.figure(figsize=(6, 4))
 
-# Plot the function for each value of rat
-for rat in rat_values:
-    y_values = sigmoid_function(x_values, rat)
-    plt.plot(x_values, y_values, label=f'rat = {rat}')
+# # Plot the function for each value of rat
+# for rat in rat_values:
+#     y_values = sigmoid_function(x_values, rat)
+#     plt.plot(x_values, y_values, label=f'rat = {rat}')
 
-# Add labels and legend
-#plt.title('Sigmoid Function for Different Values of rat')
-plt.xlabel('payoff difference')
-plt.ylabel('Probability of switching')
-plt.legend()
-#plt.grid(True)
-plt.show()
+# # Add labels and legend
+# #plt.title('Sigmoid Function for Different Values of rat')
+# plt.xlabel('payoff difference')
+# plt.ylabel('Probability of switching')
+# plt.legend()
+# #plt.grid(True)
+# plt.show()
 
 
 # rat5C = dict()
