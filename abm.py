@@ -152,14 +152,14 @@ class Jurisdiction(Model):
         # create more controlled initial conditions where first X are green. 
         # Create consumers
         for i in range(n_consumers):
-            jurisdiction = 1 if i < (n_consumers * 0.5) else 2
+            jurisdiction = 1 if i < (n_consumers * 0.4) else 2
             tech_pref = 'green' if (i <= n_consumers * self.init_c1 or i >= n_consumers * self.init_c2) else 'brown'
             consumer = Consumer(i, self, tech_pref, jurisdiction, ext_brown, ext_green, intensity_c)
             self.schedule.add(consumer)
         
         # Create producers
         for i in range(n_producers):
-            jurisdiction = 1 if i < (n_producers * 0.5) else 2
+            jurisdiction = 1 if i < (n_producers * 0.6) else 2
             tech_pref = 'green' if (i <= n_producers * self.init_p1 or i >= n_producers * self.init_p2) else 'brown'
             producer = Producer(n_consumers + i, self, tech_pref, jurisdiction, cost_brown, cost_green, tax, intensity_p)
             self.schedule.add(producer)
@@ -661,37 +661,41 @@ class Jurisdiction(Model):
         
         cons_probs = {}
         for cons in self.consumers:
+            if random.random() < 0.01:
+                switch_to = 'brown' if cons.cons_tech_preference == 'green' else 'green'
+                cons_probs[cons] = (1, switch_to)
             # other_cons = random.choice(self.consumers)
             # if cons.cons_tech_preference == other_cons.cons_tech_preference:
             #     cons_probs[cons] = (0, other_cons.cons_tech_preference)
 
             # else:
-            if cons.jurisdiction == 2:
-                if cons.cons_tech_preference == 'brown':
-                    factor_c = cons_factor_j2_bg
-                    payoff_compare = self.J2_green_payoff_c # you are brown, other cons is green
-                    your_group = self.J2_brown_payoff_c
-                else:
-                    factor_c = cons_factor_j2_gb
-                    payoff_compare = self.J2_brown_payoff_c
-                    your_group = self.J2_green_payoff_c
+            else:
+                if cons.jurisdiction == 2:
+                    if cons.cons_tech_preference == 'brown':
+                        factor_c = cons_factor_j2_bg
+                        payoff_compare = self.J2_green_payoff_c # you are brown, other cons is green
+                        your_group = self.J2_brown_payoff_c
+                    else:
+                        factor_c = cons_factor_j2_gb
+                        payoff_compare = self.J2_brown_payoff_c
+                        your_group = self.J2_green_payoff_c
 
 
-            elif cons.jurisdiction == 1:
-                if cons.cons_tech_preference == 'brown':
-                    factor_c = cons_factor_j1_bg
-                    payoff_compare = self.J1_green_payoff_c
-                    your_group = self.J1_brown_payoff_c
-                else:
-                    factor_c = cons_factor_j1_gb
-                    payoff_compare = self.J1_brown_payoff_c
-                    your_group = self.J1_green_payoff_c
+                elif cons.jurisdiction == 1:
+                    if cons.cons_tech_preference == 'brown':
+                        factor_c = cons_factor_j1_bg
+                        payoff_compare = self.J1_green_payoff_c
+                        your_group = self.J1_brown_payoff_c
+                    else:
+                        factor_c = cons_factor_j1_gb
+                        payoff_compare = self.J1_brown_payoff_c
+                        your_group = self.J1_green_payoff_c
 
 
-            if factor_c > random.random():
-                switch_to = 'brown' if cons.cons_tech_preference == 'green' else 'green'
-                prob_c = (1 + np.exp(- self.intensity_c * (payoff_compare - cons.payoff))) ** - 1 #use your_group or cons.payoff
-                cons_probs[cons] = (prob_c, switch_to)
+                if factor_c > random.random():
+                    switch_to = 'brown' if cons.cons_tech_preference == 'green' else 'green'
+                    prob_c = (1 + np.exp(- self.intensity_c * (payoff_compare - cons.payoff))) ** - 1 #use your_group or cons.payoff
+                    cons_probs[cons] = (prob_c, switch_to)
 
             # make switching faster?
             # if factor_c < random.random():
@@ -762,8 +766,8 @@ if __name__ == "__main__":
 
     ############# SINGLE RUN
 
-    model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=1, gamma=1, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-                         tax=0.2, intensity_c=10, intensity_p=10, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
+    model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0.9, beta=1/3, gamma=1/3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+                         tax=0.15, intensity_c=10, intensity_p=10, init_c1=0.04, init_c2=0.94, init_p1=0.06, init_p2=0.96)
     # rcs = []
     # current_adopt = 10
     for i in tqdm(range(200)):
@@ -864,7 +868,7 @@ if __name__ == "__main__":
     #         results_J2C = []
     #         for k in range(10):  
     #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-    #                                  tax=0.2, intensity_c=1, intensity_p=1, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
+    #                                  tax=0.2, intensity_c=10, intensity_p=10, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
     #             for l in range(200):  
     #                 model.step()
     #                 current_1 =  model.datacollector.get_model_vars_dataframe()['Percentage green Producers J1'].iloc[-1]
@@ -1076,7 +1080,7 @@ if __name__ == "__main__":
 
 #                     results_J2P = []
 #                     for i in range(10):  
-#                         model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=1, gamma=1, cost_brown=0.25, cost_green=cg, 
+#                         model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=3/4, gamma=3/4, cost_brown=0.25, cost_green=cg, 
 #                                             ext_brown=0.1, ext_green=0.3, tax=mid_tax,  intensity_c=rat, intensity_p=rat, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
 #                         last_10_values = []
 #                         for j in range(200):  
@@ -1271,7 +1275,7 @@ if __name__ == "__main__":
     ################### MIN tax for adoption with STD
 
     beta_values = np.linspace(0,1,num=11)
-    #alpha_values = np.linspace(0,1,num=11)
+    alpha_values = np.linspace(0,1,num=11)
     
     rat_vals = [1,5,10,100]
     tolerance = 0.005
@@ -1290,7 +1294,7 @@ if __name__ == "__main__":
 
 
     for rat in rat_vals:
-        for beta in tqdm(beta_values):
+        for alpha in tqdm(alpha_values):
             for run in range(runs_per_tax):
                 min_tax = 0
                 max_tax = 0.5
@@ -1302,18 +1306,26 @@ if __name__ == "__main__":
                     # results_C1 = []
                     # results_C2 = []
                     for i in range(10):  
-                        model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=1/3, cost_brown=0.25, cost_green=0.45, 
-                                            ext_brown=0.1, ext_green=0.3, tax=mid_tax, intensity_c=rat, intensity_p=rat, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
-                        last_10_values = []
+                        model = Jurisdiction(n_consumers=500, n_producers=500, alpha=alpha, beta=2/3, gamma=2/3, cost_brown=0.25, cost_green=0.45, 
+                                            ext_brown=0.1, ext_green=0.3, tax=mid_tax, intensity_c=rat, intensity_p=rat, init_c1=0.04, init_c2=0.94, init_p1=0.06, init_p2=0.96)
+                        last_10_values_1 = []
+                        last_10_values_2 = []
+
                         for j in range(200):  
                             model.step()
-                            current = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
+                            current_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J1'].iloc[-1]
+                            current_2 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
 
-                            last_10_values.append(current)
-                            if len(last_10_values) > 10:
-                                last_10_values.pop(0)
-                            current_sum = sum(last_10_values)
-                            if current_sum == 0 or current_sum == 10:
+                            last_10_values_1.append(current_1)
+                            last_10_values_2.append(current_2)
+
+                            if len(last_10_values_1) > 10:
+                                last_10_values_1.pop(0)
+                            if len(last_10_values_2) > 10:
+                                last_10_values_2.pop(0)
+                            current_sum_1 = sum(last_10_values_1)
+                            current_sum_2 = sum(last_10_values_2)
+                            if (current_sum_1 == 0 or current_sum_1 == 10) and (current_sum_2 == 0 or current_sum_2 == 10):
                                 break
 
                         model_data =  model.datacollector.get_model_vars_dataframe()
@@ -1329,25 +1341,25 @@ if __name__ == "__main__":
 
                 if max_tax != 0.5:
                     if rat == 1:
-                        if beta not in rat1P1:
-                            rat1P1[beta] = [max_tax]
+                        if alpha not in rat1P1:
+                            rat1P1[alpha] = [max_tax]
                         else:
-                            rat1P1[beta].append(max_tax)
+                            rat1P1[alpha].append(max_tax)
                     elif rat == 5:
-                        if beta not in rat5P1:  # Make sure to add only 1 value per beta value and not overwrite
-                            rat5P1[beta] = [max_tax]
+                        if alpha not in rat5P1:  # Make sure to add only 1 value per beta value and not overwrite
+                            rat5P1[alpha] = [max_tax]
                         else:
-                            rat5P1[beta].append(max_tax)
+                            rat5P1[alpha].append(max_tax)
                     elif rat == 10:
-                        if beta not in rat10P1:
-                            rat10P1[beta] = [max_tax]
+                        if alpha not in rat10P1:
+                            rat10P1[alpha] = [max_tax]
                         else:
-                            rat10P1[beta].append(max_tax)
+                            rat10P1[alpha].append(max_tax)
                     else:
-                        if beta not in rat100P1:
-                            rat100P1[beta] = [max_tax] 
+                        if alpha not in rat100P1:
+                            rat100P1[alpha] = [max_tax] 
                         else:
-                            rat100P1[beta].append(max_tax)
+                            rat100P1[alpha].append(max_tax)
                         
 
                 #     if rat == 1:
@@ -1389,10 +1401,10 @@ if __name__ == "__main__":
    
     plt.axhline(y=0.2, color='black', linestyle='--', label='tax + cost brown = cost green')
     # Customize plot labels and title
-    plt.xlabel('Beta')
+    plt.xlabel(r'$\alpha$')
     plt.ylabel('Tax')
     plt.ylim(0, 0.5)
-    plt.xlim(0,1)
+    plt.xlim(-0.1,1.1)
     plt.grid(True)
     #plt.xticks(keys)  # Assuming keys are numeric
     plt.legend()
@@ -1560,8 +1572,8 @@ if __name__ == "__main__":
 
 
 # PHASE DIAGRAM FOR INITIAL CONDITIONS
-    # j1_vals = np.linspace(0,0.5,11)
-    # j2_vals = np.linspace(0,0.5,11)
+    # j1_vals = np.linspace(0,0.5,10)
+    # j2_vals = np.linspace(0,0.5,10)
     
     # adoption_J2P = np.zeros((len(j1_vals), len(j2_vals)))
 

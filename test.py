@@ -4,11 +4,11 @@ import math
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-vals = [0.43,0.5,0.45,0.39,0.45]
-print(np.mean(vals))
-print(np.std(vals))
+# vals = [0.43,0.5,0.45,0.39,0.45]
+# print(np.mean(vals))
+# print(np.std(vals))
 
-print(round(0.22,1))
+#print(np.linspace(0,0.5,11))
 
 # Generate example data (replace this with your simulation results)
 # initial_conditions_j1 = np.linspace(0, 1, 10)
@@ -46,7 +46,7 @@ print(round(0.22,1))
 # av=0.2
 # rat=1
 
-# print((1 + np.exp(-rat * (av - payoff))) ** - 1)
+#print(1 - (1 + np.exp(-100 * (0.1))) ** - 1)
 
 # def sigmoid_function(av_payoff, rat):
 #     return (1 + np.exp(-rat * av_payoff)) ** -1
