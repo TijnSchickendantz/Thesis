@@ -3,10 +3,14 @@ import random
 import math
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.stats import ttest_ind
 
-# vals = [0.43,0.5,0.45,0.39,0.45]
-# print(np.mean(vals))
-# print(np.std(vals))
+
+vals = np.linspace(0,10,10)
+vals2 = np.linspace(0,20,10)
+t_stat, p_value = ttest_ind(vals, vals2)
+print(t_stat, p_value)
+
 
 #print(np.linspace(0,0.5,11))
 
