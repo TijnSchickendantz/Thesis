@@ -4,13 +4,53 @@ import math
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import ttest_ind
+import networkx as nx
 
+# network_A = nx.complete_graph(8)
+# network_B = nx.complete_graph(8)
 
-vals = np.linspace(0,10,10)
-vals2 = np.linspace(0,20,10)
-t_stat, p_value = ttest_ind(vals, vals2)
-print(t_stat, p_value)
+# # Rename nodes to differentiate networks
+# mapping_A = {i: i + 1 for i in range(8)}
+# mapping_B = {i: i + 9 for i in range(8)}
 
+# network_A = nx.relabel_nodes(network_A, mapping_A)
+# network_B = nx.relabel_nodes(network_B, mapping_B)
+
+# # Combine networks into a new graph
+# combined_network = nx.Graph()
+# combined_network.add_nodes_from(network_A.nodes)
+# combined_network.add_edges_from(network_A.edges)
+# combined_network.add_nodes_from(network_B.nodes)
+# combined_network.add_edges_from(network_B.edges)
+
+# # Add 3 vertices connecting the two networks
+# inter_connections = [(2, 12), (1, 13), (8, 14)]
+# combined_network.add_edges_from(inter_connections)
+
+# # Define circular positions for visualization
+# pos_A = nx.circular_layout(network_A)
+# pos_B = nx.circular_layout(network_B)
+
+# # Adjust the positions to ensure both networks are on the same height
+# # Shift Network A to the left and Network B to the right
+# for key in pos_A:
+#     pos_A[key][0] -= 2.5  # Shift Network A to the left
+#     pos_A[key][1] += 0.5  # Align height
+
+# for key in pos_B:
+#     pos_B[key][0] += 2.5  # Shift Network B to the right
+#     pos_B[key][1] += 0.5  # Align height
+
+# # Combine positions
+# pos = {**pos_A, **pos_B}
+
+# # Draw the graph
+# plt.figure(figsize=(10, 5))
+# nx.draw(combined_network, pos, with_labels=False, node_color='skyblue', node_size=500, edge_color='gray', font_size=10)
+# plt.text(-1.5, 1.5, "Partition 1", fontsize=12, ha='center', va='center', bbox=dict(facecolor='white', edgecolor='black'))
+# plt.text(1.5, 1.5, "Partition 2", fontsize=12, ha='center', va='center', bbox=dict(facecolor='white', edgecolor='black'))
+# plt.title("Two Fully Connected Networks Interconnected with 3 Vertices")
+# plt.show()
 
 #print(np.linspace(0,0.5,11))
 
@@ -50,32 +90,32 @@ print(t_stat, p_value)
 # av=0.2
 # rat=1
 
-#print(1 - (1 + np.exp(-100 * (0.1))) ** - 1)
+#print((1 + np.exp(-20 * 0.2)) ** - 1)
 
-# def sigmoid_function(av_payoff, rat):
-#     return (1 + np.exp(-rat * av_payoff)) ** -1
+def sigmoid_function(av_payoff, rat):
+    return (1 + np.exp(-rat * av_payoff)) ** -1
 
 # # Generate x values (av_payoff) from -1 to 1
-# x_values = np.linspace(-1, 1, 100)
+x_values = np.linspace(-1, 1, 100)
 
-# # Values of rat
-# rat_values = [1, 10, 100]
+# Values of rat
+rat_values = [1, 10, 100]
 
-# # Create the plot
-# plt.figure(figsize=(6, 4))
+# Create the plot
+plt.figure(figsize=(6, 4))
 
-# # Plot the function for each value of rat
-# for rat in rat_values:
-#     y_values = sigmoid_function(x_values, rat)
-#     plt.plot(x_values, y_values, label=f'rat = {rat}')
+# Plot the function for each value of rat
+for rat in rat_values:
+    y_values = sigmoid_function(x_values, rat)
+    plt.plot(x_values, y_values, label=f'$r$ = {rat}')
 
-# # Add labels and legend
-# #plt.title('Sigmoid Function for Different Values of rat')
-# plt.xlabel('payoff difference')
-# plt.ylabel('Probability of switching')
-# plt.legend()
-# #plt.grid(True)
-# plt.show()
+# Add labels and legend
+#plt.title('Sigmoid Function for Different Values of rat')
+plt.xlabel('payoff difference')
+plt.ylabel('Probability of switching')
+plt.legend()
+#plt.grid(True)
+plt.show()
 
 
 # rat5C = dict()
