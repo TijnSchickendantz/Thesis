@@ -19,23 +19,33 @@ from joblib import Parallel, delayed
 
 # CONSUMER CLASS
 class Consumer(Agent):
-    def __init__(self, unique_id, model, tech_pref, jurisdiction, ext_brown, ext_green, intensity):#, tech_preference):
+    def __init__(self, unique_id, model, tech_pref, jurisdiction, ext_brown, ext_green, intensity):
         super().__init__(unique_id, model)
-        self.cons_tech_preference = tech_pref #random.choices(['brown', 'green'], weights=[5, 5])[0]
-        self.benefit = 0.5 #random.uniform(0, 1)  # can make it random for heterogeneous agents
-        self.ext_brown = ext_brown#random.uniform(0, 1) 
+        self.cons_tech_preference = tech_pref
+        self.benefit = 0.5 #random.uniform(0, 1)  # random benefit values for heterogeneous agents
+        self.ext_brown = ext_brown
         self.ext_green = ext_green
         self.price_green = 0.5
         self.price_brown = 0.5
         self.payoff = 0
-        self.jurisdiction = jurisdiction #random.choice([1,2]) # every agent belongs to either jurisdiction
+        self.jurisdiction = jurisdiction 
         self.intensity = intensity
-
-    def buy(self):
-        return random.choice(['brown', 'green']) # change to self.cons_tech_preference when switching is possible
     
     
     def cons_payoff(self, tech_preference, jurisdiction):
+        """
+        Calculate the consumer's payoff
+
+        Parameters:
+        - tech_preference (str): The consumer's preference for technology.
+        - jurisdiction: 1 or 2 (not currently used in the calculation).
+
+        Returns:
+        - float: The calculated payoff
+        
+        Note: There is commented-out code that suggests future logic for subsidies based on tech preference and jurisdiction.
+        """
+
         if tech_preference == 'green':
             price = self.price_green
             ext = self.ext_green
@@ -51,13 +61,14 @@ class Consumer(Agent):
         self.payoff = - price + self.benefit + ext #+ subsidy
         return self.payoff
     
-    def cons_switch(self, other_consumer):
-        payoff_cons =  self.payoff 
-        payoff_other_cons = other_consumer.payoff
-        if self.cons_tech_preference == other_consumer.cons_tech_preference:
-            return 0
-        else:
-            return (1 + np.exp(-self.intensity * (payoff_other_cons - payoff_cons))) ** - 1
+
+    # def cons_switch(self, other_consumer):
+    #     payoff_cons =  self.payoff 
+    #     payoff_other_cons = other_consumer.payoff
+    #     if self.cons_tech_preference == other_consumer.cons_tech_preference:
+    #         return 0
+    #     else:
+    #         return (1 + np.exp(-self.intensity * (payoff_other_cons - payoff_cons))) ** - 1
                                                        
 
     def __str__(self):
@@ -69,7 +80,7 @@ class Consumer(Agent):
 class Producer(Agent):
     def __init__(self, unique_id, model, tech_pref, jurisdiction, cost_brown, cost_green, tax,intensity):#, tech_preference):
         super().__init__(unique_id, model)
-        self.prod_tech_preference = tech_pref #random.choices(['brown', 'green'], weights=[5, 5])[0]
+        self.prod_tech_preference = tech_pref
         self.cost_brown = cost_brown
         self.cost_green = cost_green
         self.tax = tax
@@ -77,14 +88,22 @@ class Producer(Agent):
         self.price_brown = 0.5
         self.price_green = 0.5
         self.payoff = 0
-        self.jurisdiction =  jurisdiction #random.choice([1,2]) # every agent belongs to either jurisdiction
+        self.jurisdiction =  jurisdiction 
         self.intensity = intensity
-
-    def produce(self):
-        return random.choice(['brown', 'green']) # change to self.prod_tech_preference when swithcing is possible
     
     
     def prod_payoff(self, tech_preference, jurisdiction):
+        """
+        Calculate the producer's payoff
+
+        Parameters:
+        - tech_preference (str): The producer's preference for technology.
+        - jurisdiction: 1 or 2
+
+        Returns:
+        - float: The calculated payoff
+        
+        """
         if tech_preference == 'green':
             price = self.price_green
             cost = self.cost_green
@@ -99,13 +118,13 @@ class Producer(Agent):
         self.payoff = price - cost - tax - self.fixed_cost
         return self.payoff
     
-    def prod_switch(self, other_producer):
-        payoff_prod = self.payoff 
-        payoff_other_prod = other_producer.payoff
-        if self.prod_tech_preference == other_producer.prod_tech_preference:
-            return 0
-        else:
-            return (1 + np.exp(-self.intensity * (payoff_other_prod - payoff_prod))) ** - 1
+    # def prod_switch(self, other_producer):
+    #     payoff_prod = self.payoff 
+    #     payoff_other_prod = other_producer.payoff
+    #     if self.prod_tech_preference == other_producer.prod_tech_preference:
+    #         return 0
+    #     else:
+    #         return (1 + np.exp(-self.intensity * (payoff_other_prod - payoff_prod))) ** - 1
 
     
     def __str__(self):
@@ -115,9 +134,27 @@ class Producer(Agent):
 
 # JURISDICTION CLASS
 class Jurisdiction(Model):
+    """
+    This class simulates the interactions between producers and consumers within two jurisdictions, 
+    tracking the adoption of two technologies.
+    """
 
     def __init__(self, n_producers, n_consumers,alpha,beta,gamma, cost_brown, cost_green, ext_brown, ext_green, 
                  tax, intensity_c, intensity_p, init_c1, init_c2, init_p1, init_p2):
+        """
+        Initialize the Jurisdiction model with producers and consumers.
+
+        Parameters:
+        - n_producers (int): Number of producers in the jurisdiction.
+        - n_consumers (int): Number of consumers in the jurisdiction.
+        - alpha, beta, gamma (float): Interaction parameters
+        - cost_brown, cost_green (float): The costs associated with brown and green technologies, respectively.
+        - ext_brown, ext_green (float): Externalities associated with brown and green technologies, respectively.
+        - tax (float): Tax rate applied to the brown technology.
+        - intensity_c, intensity_p (float): Rationality level affecting consumer and producer behavior.
+        - init_c1, init_c2 (float): Initial distribution of consumer adoption rates for green and brown technology.
+        - init_p1, init_p2 (float): Initial distribution of producer adoption rates for green and brown technology.
+        """
 
         self.tax = tax
         self.alpha = alpha
@@ -159,7 +196,7 @@ class Jurisdiction(Model):
 
         self.welfare = 0
 
-        # create more controlled initial conditions where first X are green. 
+       
         # Create consumers
         for i in range(n_consumers):
             jurisdiction = 1 if i < (n_consumers * 0.5) else 2
@@ -188,13 +225,11 @@ class Jurisdiction(Model):
 
         self.n_producers_j1 = len(self.producers_j1)
         self.n_producers_j2 = len(self.producers_j2)
+
+        # Prints to check if we are using the right amount of consumers and producers per jurisdiction for a simulation
         #print(self.n_consumers_j1, self.n_producers_j1)
         #print(self.n_consumers_j2, self.n_producers_j2)
        
-        # trackers
-        # adoption rate
-        # welfare in jurisdiction
-        # externalities
 
         self.datacollector = DataCollector(model_reporters={"Total Brown Products": "total_brown_products",
                              "Total Green Products": "total_green_products",
@@ -242,12 +277,37 @@ class Jurisdiction(Model):
         
     
     def step(self):
+        """
+        Execute one step of the simulation.
+
+        This method performs a single trading and technology switching cycle and collects data for the current state of the model.
+        """
 
         self.trading_cycle(self.alpha)
         self.datacollector.collect(self)
 
     
     def trading_cycle(self,alpha):
+        """
+        Execute all processes within a time step.
+
+        This method performs the following steps:
+        1. Resets key statistics (e.g., total products, externalities, welfare) to zero.
+        2. Calculates the market distribution and number of producers and consumers by technology preference 
+        (green or brown) within each jurisdiction.
+        3. Calculates the payoff for each producer based on their technology preference and jurisdiction.
+        4. Calculates the proportion of producers and consumers using green and brown technologies in each jurisdiction.
+        5. Simulates consumer purchasing behavior.
+        6. Calculate payoff of each consumer and updates producer payoffs if they are unable to sell their products.
+        7. Simulates technology switching behavior for both producers and consumers.
+
+
+        Note:
+        - The method includes logic for both a local first depletion system and a global depletion system, 
+        though the global depletion system is currently commented out.
+        - This method includes two different switching systems for producers and consumers; 
+        the first system is commented out, and the second system is currently used.
+        """
 
         # every time we call the step function, we set the total products in the market to 0
         self.total_brown_products = 0
@@ -313,17 +373,12 @@ class Jurisdiction(Model):
         self.total_adoption_j2 = (self.total_green_producers_j2 + self.total_green_consumers_j2) / (self.n_producers_j2 + self.n_consumers_j2)
 
 
-        # print(self.total_brown_consumers_j1)
-        # print(self.total_brown_consumers_j2)
-        # print(self.total_green_consumers_j1)
-        # print(self.total_green_consumers_j2)
         # Consumers have to buy in random order, also random between jurisdictions
         shuffled_consumers = list(self.consumers)
         random.shuffle(shuffled_consumers)
 
         # Consumers buy one product each if possible
         for agent in shuffled_consumers:
-            #print(agent)
             product_color = agent.cons_tech_preference
             juris = agent.jurisdiction
 
@@ -369,45 +424,36 @@ class Jurisdiction(Model):
             #     agent.payoff = agent.cons_payoff(agent.cons_tech_preference, agent.jurisdiction)
 
             # else:
-            #     agent.payoff = 0
-                #print('zero payoff')
+            #    agent.payoff = 0
                 
 
-        #     # this code is for first depleting local supply
+        #  this code is for first depleting local supply
             if product_color == 'brown':
                 if self.total_brown_products_j1 > 0 and juris == 1:
-                    #print('i have bought brown in j1')
                     self.total_brown_products_j1 -= 1
                     agent.payoff = agent.cons_payoff(agent.cons_tech_preference, agent.jurisdiction) # consumer in J1 is able to buy brown
                     self.brown_externality_j1 += agent.ext_brown
                 elif self.total_brown_products_j2 > 0 and juris == 2:
-                    #print('i have bought brown in j2')
                     self.total_brown_products_j2 -= 1
                     agent.payoff = agent.cons_payoff(agent.cons_tech_preference, agent.jurisdiction) # consumer in J2 is able to buy brown
                     self.brown_externality_j2 += agent.ext_brown
                 else:
                     agent.payoff = 0 # consumer is not able to buy
-                    #print('i coudldnt buy')
             elif product_color == 'green':
-                #self.total_green_consumers += 1
                 if self.total_green_products_j1 > 0 and juris == 1:
-                    #print('i have bought green in j1')
                     self.total_green_products_j1 -= 1
                     agent.payoff = agent.cons_payoff(agent.cons_tech_preference, agent.jurisdiction) # consumer in J1 is able to buy green
                     self.green_externality_j1 += agent.ext_green
                 elif self.total_green_products_j2 > 0 and juris == 2:
-                    #print('i have bought green in j2')
                     self.total_green_products_j2 -= 1
                     agent.payoff = agent.cons_payoff(agent.cons_tech_preference, agent.jurisdiction) # consumer in J2 is able to buy green
                     self.green_externality_j2 += agent.ext_green
                 else:
                     agent.payoff = 0 # consumer not able to buy
-                    #print('i coudldnt buy')
-           # print('next')
         
+        
+        # Let global consumers buy what is left in the other jurisdiction. ONLY use this when we use a local market
         if self.alpha > 0:
-            #print('yes')
-            #Let global consumers buy what is left in the other jurisdiction
             if self.total_brown_products_j1 > 0:
                 poss_cons_j2b = [agent for agent in self.consumers_j2 if agent.payoff == 0 and agent.cons_tech_preference == 'brown']
                 amount_j2b = int(alpha * len(poss_cons_j2b))
@@ -453,31 +499,27 @@ class Jurisdiction(Model):
                         cons.payoff = cons.cons_payoff(cons.cons_tech_preference, cons.jurisdiction)
 
 
-        # after consumers have bought, subtract from payoff of random producers that havent sold
-                    
+
+        # After consumers have bought, subtract from payoff of random producers that havent sold
         if self.total_brown_products_j1 > 0: # check if we have to perform the subtraction for brown J1
-            #print('brown J1:', self.total_brown_products_j1)
             brown_producers_j1 = [agent for agent in self.producers_j1 if agent.prod_tech_preference == 'brown']
             selected_producers_b1 = random.sample(brown_producers_j1, self.total_brown_products_j1)
             for prod in selected_producers_b1:
                 prod.payoff -= (prod.price_brown - prod.tax) # they dont pay tax if they dont sell the product?
 
         if self.total_brown_products_j2 > 0: # check if we have to perform the subtraction for brown J2
-            #print('brown J2:', self.total_brown_products_j2)
             brown_producers_j2 = [agent for agent in self.producers_j2 if agent.prod_tech_preference == 'brown']
             selected_producers_b2 = random.sample(brown_producers_j2, self.total_brown_products_j2)
             for prod in selected_producers_b2:
                 prod.payoff -= prod.price_brown # only tax for jurisdiction 1
 
         if self.total_green_products_j1 > 0: # check if we have to perform the subtraction for green J1
-            #print('green J1:', self.total_green_products_j1)
             green_producers_j1 = [agent for agent in self.producers_j1 if agent.prod_tech_preference == 'green']
             selected_producers_g1 = random.sample(green_producers_j1, self.total_green_products_j1)
             for prod in selected_producers_g1:
                 prod.payoff -= prod.price_green
 
         if self.total_green_products_j2 > 0: # check if we have to perform the subtraction for green J2
-            #print('green J2:', self.total_green_products_j2)
             green_producers_j2 = [agent for agent in self.producers_j2 if agent.prod_tech_preference == 'green']
             selected_producers_g2 = random.sample(green_producers_j2, self.total_green_products_j2)
             for prod in selected_producers_g2:
@@ -493,8 +535,8 @@ class Jurisdiction(Model):
 
         # SWITCHING SYSTEM 1 
                 
-        #Compare payoff to random producer and save data for switching
-        #we dont need first term of every factor term
+        # Compare payoff to random producer and save data for switching
+    
         # prod_probs = {}
         # prod_factor_j1_bg = (self.total_green_producers_j1 + self.beta * self.total_green_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2)
         # prod_factor_j1_gb = ((self.total_brown_producers_j1 + self.beta * self.total_brown_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2))
@@ -565,6 +607,7 @@ class Jurisdiction(Model):
 
 
         # SWITCHING SYSTEM 2
+
         # Calculate average payoffs for producers for each tech per Jurisdiction
         self.J1_brown_payoff = 0 
         self.J1_green_payoff = 0
@@ -584,15 +627,9 @@ class Jurisdiction(Model):
                     self.J2_green_payoff += prod.payoff
 
         self.J1_brown_payoff = self.J1_brown_payoff / self.total_brown_producers_j1 if self.total_brown_producers_j1 != 0 else 0
-        #print('j1p brown:',self.J1_brown_payoff)
         self.J1_green_payoff = self.J1_green_payoff / self.total_green_producers_j1 if self.total_green_producers_j1 != 0 else 0
-        #print('j1p green:',self.J1_green_payoff)
         self.J2_brown_payoff = self.J2_brown_payoff / self.total_brown_producers_j2 if self.total_brown_producers_j2 != 0 else 0
-        #print('j2p brown',self.J2_brown_payoff)
         self.J2_green_payoff = self.J2_green_payoff / self.total_green_producers_j2 if self.total_green_producers_j2 != 0 else 0
-
-        # print("J1 brown", self.J1_brown_payoff)
-        # print("J1 green", self.J1_green_payoff)
         
         # Producers switch
         prod_factor_j1_bg = (self.total_green_producers_j1 + self.beta * self.total_green_producers_j2) / (self.n_producers_j1 + self.beta * self.n_producers_j2)
@@ -601,13 +638,9 @@ class Jurisdiction(Model):
         prod_factor_j2_gb = (self.total_brown_producers_j2 + self.beta * self.total_brown_producers_j1) / (self.n_producers_j2 + self.beta * self.n_producers_j1)
         prod_probs = {}
         for prod in self.producers:
-            if random.random() < 0.001:
+            if random.random() < 0.001: # random technology switching with small probability 
                 switch_to = 'brown' if prod.prod_tech_preference == 'green' else 'green'
                 prod_probs[prod] = (1, switch_to)
-            # other_prod = random.choice(self.producers)
-            # if prod.prod_tech_preference == other_prod.prod_tech_preference:
-            #     continue #prod_probs[prod] = (0, other_prod.prod_tech_preference)
-
             else:
                 if prod.jurisdiction == 2:
                     if prod.prod_tech_preference == 'brown':
@@ -629,10 +662,10 @@ class Jurisdiction(Model):
                         payoff_compare = self.J1_brown_payoff 
                         your_group = self.J1_green_payoff
                 
-                if factor_p > random.random():
+                if factor_p > random.random(): # only compute the probability if random numb bigger than factor_p. saves computing time
                     switch_to = 'brown' if prod.prod_tech_preference == 'green' else 'green'
                     prob_p = (1 + np.exp(- self.intensity_p * (payoff_compare - prod.payoff))) ** - 1 # use your_group or prod.payoff
-                    prod_probs[prod] = (prob_p, switch_to)# (factor_p * prob_p, switch_to) 
+                    prod_probs[prod] = (prob_p, switch_to)  # (factor_p * prob_p, switch_to) this is the old computation where you compute probabilities of all agents
             
         # Do the actual producer switching
         for prod, probs in prod_probs.items():
@@ -660,9 +693,7 @@ class Jurisdiction(Model):
                     self.J2_green_payoff_c += cons.payoff
 
         self.J1_brown_payoff_c = self.J1_brown_payoff_c / self.total_brown_consumers_j1 if self.total_brown_consumers_j1 != 0 else 0
-        #print('j1c brown', self.J1_brown_payoff)
         self.J1_green_payoff_c = self.J1_green_payoff_c / self.total_green_consumers_j1 if self.total_green_consumers_j1 != 0 else 0
-        #print('j1c green', self.J1_green_payoff)
         self.J2_brown_payoff_c = self.J2_brown_payoff_c / self.total_brown_consumers_j2 if self.total_brown_consumers_j2 != 0 else 0
         self.J2_green_payoff_c = self.J2_green_payoff_c / self.total_green_consumers_j2 if self.total_green_consumers_j2 != 0 else 0
 
@@ -674,14 +705,9 @@ class Jurisdiction(Model):
         
         cons_probs = {}
         for cons in self.consumers:
-            if random.random() < 0.001:
+            if random.random() < 0.001: # random technology switching with small probability 
                 switch_to = 'brown' if cons.cons_tech_preference == 'green' else 'green'
                 cons_probs[cons] = (1, switch_to)
-            # other_cons = random.choice(self.consumers)
-            # if cons.cons_tech_preference == other_cons.cons_tech_preference:
-            #     cons_probs[cons] = (0, other_cons.cons_tech_preference)
-
-            # else:
             else:
                 if cons.jurisdiction == 2:
                     if cons.cons_tech_preference == 'brown':
@@ -707,121 +733,176 @@ class Jurisdiction(Model):
 
                 if factor_c > random.random():
                     switch_to = 'brown' if cons.cons_tech_preference == 'green' else 'green'
-                    prob_c = (1 + np.exp(- self.intensity_c * (payoff_compare - cons.payoff))) ** - 1 #use your_group or cons.payoff
+                    prob_c = (1 + np.exp(- self.intensity_c * (payoff_compare - cons.payoff))) ** - 1 # use your_group or cons.payoff
                     cons_probs[cons] = (prob_c, switch_to)
 
-            # make switching faster?
-            # if factor_c < random.random():
-            #     continue # 
-            # else:
-            #     do calculation
-
-           #prob_c = (1 + np.exp(- self.intensity * (payoff_compare - cons.payoff))) ** - 1
-            #cons_probs[cons] = (factor_c * prob_c, switch_to) 
             
         # Do the actual consumer switching
         for cons, probs in cons_probs.items():
             number = random.random()
-            #print(probs[0], number)
             if probs[0] > number:
                 cons.cons_tech_preference = probs[1]
 
 
-        # WELFARE PER JURISDICTION
-        self.welfare_juris1 = (self.total_brown_producers_j1 * self.J1_brown_payoff) + (self.total_green_producers_j1 * self.J1_green_payoff) \
-                        + (self.total_brown_consumers_j1 * self.J1_brown_payoff_c) + (self.total_green_consumers_j1 * self.J1_green_payoff_c) \
-                        + (self.sales_brown_j1 * self.tax)  #- 0.2 * (self.sales_brown_j1 + len(self.subset_j1b) + self.sales_brown_j1 + len(self.subset_j2b))
-       
-        #print(self.welfare_juris1)
+        # WELFARE PER JURISDICTION.
+        # not using this in thesis directly, but I have it in case I ver want to use it
+
+        # self.welfare_juris1 = (self.total_brown_producers_j1 * self.J1_brown_payoff) + (self.total_green_producers_j1 * self.J1_green_payoff) \
+        #                 + (self.total_brown_consumers_j1 * self.J1_brown_payoff_c) + (self.total_green_consumers_j1 * self.J1_green_payoff_c) \
+        #                 + (self.sales_brown_j1 * self.tax)  #- 0.2 * (self.sales_brown_j1 + len(self.subset_j1b) + self.sales_brown_j1 + len(self.subset_j2b))
         
-        self.welfare_juris2 = self.total_brown_producers_j2 * self.J2_brown_payoff + self.total_green_producers_j2 * self.J2_green_payoff \
-                        + self.total_brown_consumers_j2 * self.J2_brown_payoff_c + self.total_green_consumers_j2 * self.J2_green_payoff_c
+        # self.welfare_juris2 = self.total_brown_producers_j2 * self.J2_brown_payoff + self.total_green_producers_j2 * self.J2_green_payoff \
+        #                 + self.total_brown_consumers_j2 * self.J2_brown_payoff_c + self.total_green_consumers_j2 * self.J2_green_payoff_c
                         #- 0.1 * (self.sales_brown_j1 + len(self.subset_j1b) + self.sales_brown_j1 + len(self.subset_j2b))
                         # - global externality
-        #print(self.welfare_juris2)
-
-            
-
-        #super().__init__()
-
-
-    #def jurisdiction_welfare(brown_prod, green_prod, brown_cons, green_cons, payoff_bp, payoff_gp, ):
-
-       
-
-        #welfare = perc_green_c + perc_green_p + perc_brown_c + perc_brown_p
-        #return welfare
-    
-    # def jurisdiction_sales():
-    #     return 
 
 
 
 # RUN MODEL AND PRINT OUTPUTS
 if __name__ == "__main__":
+    
 
-    ############# SINGLE RUN
+    #### SINGLE RUN DYNAMICS  
+    ### note: the commented out lines serve different desired outputs 
 
-    model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0.001, beta=0.5, gamma=0.5, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-                         tax=0.2, intensity_c=10, intensity_p=10, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
-    # rcs = [
-    # current_adopt = 10
-    for _ in range(20):
-        model.step()
+    # initialize list for tracking adoption rates
+    all_data_PJ1 = []
+    all_data_CJ1 = []
+    all_data_PJ2 = []
+    all_data_CJ2 = []
 
-    list_1 = []
-    list_2 = []
-    list_3 = []
-    list_4 = []
+    #total_steps = []
+    #avg_max_j1 = []
+    #avg_max_j2 = []
+    
+    # do sims amount of simulations
+    sims = 10
+    for i in tqdm(range(sims)):
+        model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0, gamma=0.3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+                            tax=0.2, intensity_c=10, intensity_p=10, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
+        
 
-    # Fill first list
-    for _ in range(30):
-        model.step()
-        fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J1'].iloc[-1]
-        list_1.append(fill_1)
-        fill_2 = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
-        list_3.append(fill_2)
+        # current_adopt = 10
+        # max_j1C = []
+        # max_j1P = []
+        # max_j2P = []
+        # max_j2C = []
 
-    while True:
-        model.step()
-        current1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J1'].iloc[-1]
-        list_2.append(current1)
-        current2 = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
-        list_4.append(current2)
 
-        if len(list_2) == 30:
-            if list_1 == list_2 and list_3 == list_4:
-                break
+        # for j in range(50):
+        #     model.step()
 
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=RuntimeWarning)
-                t_stat, p_value = ttest_ind(list_1, list_2)
-                t_stat1, p_value1 = ttest_ind(list_3, list_4)
+        for _ in range(10):
+            model.step()
+            # max_j1C.append( model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J1'].iloc[-1])
+            # max_j2C.append( model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1])
 
-            if p_value > 0.05 and p_value1 > 0.05:  # Means are not statistically different
-                break
 
-            list_1 = list_2[:]
-            list_2 = []
+        list_1 = []
+        list_2 = []
+        list_3 = []
+        list_4 = []
 
-            list_3 = list_4[:]
-            list4 = []
+        #Fill first list
+        for _ in range(30):
+            model.step()
+           #max_j1C.append( model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J1'].iloc[-1])
+           #max_j2C.append( model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1])
 
+            fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
+            list_1.append(fill_1)
+            # fill_2 = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
+            # list_3.append(fill_2)
+
+        #step_count = 10 + 30 
+
+        # do model step until simulation has converged
+        while True:
+            model.step()
+            #step_count += 1
+           # max_j1C.append( model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J1'].iloc[-1])
+           # max_j2C.append( model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1])
+
+            current1 = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
+            list_2.append(current1)
+            # current2 = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
+            # list_4.append(current2)
+
+            if len(list_2) == 30:
+                if list_1 == list_2:
+                    break
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    t_stat, p_value = ttest_ind(list_1, list_2)
+                    #t_stat1, p_value1 = ttest_ind(list_3, list_4)
+
+                if p_value > 0.05:
+                    break
+
+                list_1 = list_2[:]
+                list_2 = []
+
+                # list_3 = list_4[:]
+                # list4 = []
+
+        model_data = model.datacollector.get_model_vars_dataframe()
+        all_data_PJ1.append(model_data['Percentage green Producers J1'].values)
+        all_data_CJ1.append(model_data['Percentage green Consumers J1'].values)
+        all_data_PJ2.append(model_data['Percentage green Producers J2'].values)
+        all_data_CJ2.append(model_data['Percentage green Consumers J2'].values)
+    
+        #print(step_count)
+        #total_steps.append(step_count)
+        #avg_max_j1.append(np.max(max_j1C))
+        #avg_max_j2.append(np.max(max_j2C))
     # print(np.mean(rcs))
 
+    #print(np.mean(total_steps))
+    #print(np.mean(avg_max_j1))
+    #print(avg_max_j2)
+    #print(np.mean(avg_max_j2))
 
-    # Retrieve and plot data collected by the DataCollector
-    model_data = model.datacollector.get_model_vars_dataframe()
+    all_data_PJ1 = np.array(all_data_PJ1)
+    all_data_CJ1 = np.array(all_data_CJ1)
+    all_data_PJ2 = np.array(all_data_PJ2)
+    all_data_CJ2 = np.array(all_data_CJ2)
+
+    # compute means and std devs
+    mean_PJ1 = np.mean(all_data_PJ1, axis=0)
+    std_PJ1 = np.std(all_data_PJ1, axis=0)
+    mean_CJ1 = np.mean(all_data_CJ1, axis=0)
+    std_CJ1 = np.std(all_data_CJ1, axis=0)
+    mean_PJ2 = np.mean(all_data_PJ2, axis=0)
+    std_PJ2 = np.std(all_data_PJ2, axis=0)
+    mean_CJ2 = np.mean(all_data_CJ2, axis=0)
+    std_CJ2 = np.std(all_data_CJ2, axis=0)
+            
 
     plt.figure(figsize=(7, 4))
 
     #plt.plot(model_data['welfare jurisdiction 1'], label='welfare J1')
     #plt.plot(model_data['welfare jurisdiction 2'], label='welfare J2')
 
-    plt.plot(model_data['Percentage green Producers J1'], label='Producers J1', color='indianred')
-    plt.plot(model_data['Percentage green Consumers J1'], label='Consumers J1', color='darkred')
-    plt.plot(model_data['Percentage green Producers J2'], label='Producers J2', color='deepskyblue')
-    plt.plot(model_data['Percentage green Consumers J2'], label='Consumers J2', color='royalblue')
+    # plt.plot(model_data['Percentage green Producers J1'], label='Producers J1', color='indianred')
+    # plt.plot(model_data['Percentage green Consumers J1'], label='Consumers J1', color='darkred')
+    # plt.plot(model_data['Percentage green Producers J2'], label='Producers J2', color='deepskyblue')
+    # plt.plot(model_data['Percentage green Consumers J2'], label='Consumers J2', color='royalblue')
+
+    time_steps = range(len(mean_PJ1))
+    #plt.rcParams['figure.dpi'] = 300
+
+    plt.plot(time_steps, mean_PJ1, label='Producers J1', color='indianred')
+    plt.fill_between(time_steps, np.clip(mean_PJ1 - std_PJ1, 0, 1), np.clip(mean_PJ1 + std_PJ1, 0, 1), color='indianred', alpha=0.2)
+
+    plt.plot(time_steps, mean_CJ1, label='Consumers J1', color='orange')
+    plt.fill_between(time_steps, np.clip(mean_CJ1 - std_CJ1, 0, 1), np.clip(mean_CJ1 + std_CJ1, 0, 1), color='orange', alpha=0.2)
+
+    plt.plot(time_steps, mean_PJ2, label='Producers J2', color='deepskyblue')
+    plt.fill_between(time_steps, np.clip(mean_PJ2 - std_PJ2, 0, 1), np.clip(mean_PJ2 + std_PJ2, 0, 1), color='deepskyblue', alpha=0.2)
+
+    plt.plot(time_steps, mean_CJ2, label='Consumers J2', color='royalblue')
+    plt.fill_between(time_steps, np.clip(mean_CJ2 - std_CJ2, 0, 1), np.clip(mean_CJ2 + std_CJ2, 0, 1), color='royalblue', alpha=0.2)
 
     # plt.plot(model_data["brown payoff producers J1"], label='producers O', color='deepskyblue')
     # plt.plot(model_data["green payoff producers J1"], label='producers N', color='royalblue')
@@ -830,194 +911,287 @@ if __name__ == "__main__":
     # plt.plot(model_data["green payoff consumers J1"], label='consumers N', color='darkred')
 
     #plt.title('Adoption of green tech')
-    plt.xlabel('Time')
+    plt.xlabel('time steps', fontsize=17)
     plt.ylim(-0.1, 1.1) 
+    plt.grid(True)
     #plt.ylabel('Average payoff')
-    plt.ylabel("Adoption rate of N")
-    plt.legend()
+    plt.ylabel("Adoption rate of N", fontsize=16)
+    plt.legend(fontsize=15)
     #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
 
     plt.tight_layout()
+    #plt.savefig('D:/tijn2/CS/thesis/result figures/in thesis/single runs/init0.5MIX,dpi=500.png', dpi=500)
     plt.show()
 
 
 
+    #### ALPHA/BETA/GAMMA/tax HEATMAPS 1 tax at a time
 
-    ############## SALES VS PREFERENCE
-
-    # model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.3, gamma=0.3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-    #                      tax=0.25, intensity=5)
-    # for i in tqdm(range(100)):
-    #     model.step()
-
-    # # Retrieve and plot data collected by the DataCollector
-    # model_data = model.datacollector.get_model_vars_dataframe()
-
-    # plt.figure(figsize=(7, 4))
-
-    # #plt.plot(model_data['Total Green Producers J1'], label='Green Producers J1')
-    # #plt.plot(model_data['Sales green J1'], label='Sales of green J1')
-    # #plt.plot(model_data['Total Green Consumers J1'], label='Green Consumers J1')
-    # plt.plot((model_data['Total Green Consumers J1'] - model_data['Sales green J1']) / model_data['Total Green Consumers J1'], label='J1')
-    # plt.plot((model_data['Total Green Consumers J2'] - model_data['Sales green J2']) / model_data['Total Green Consumers J2'], label='J2')
-    # #plt.plot(model_data['Percentage green Consumers J2'], label='Percentage Green Consumers J2', color='royalblue')
-    # plt.title('Percentage green consumers unable to buy')
-    # plt.xlabel('Time')
-    # plt.ylabel('Amount')
-    # plt.legend()
-    # #plt.xticks(range(0, len(model_data)), map(int, model_data.index))
-
-    # plt.tight_layout()
-    # plt.show()
-
-
-
-    ########## ALPHA/BETA/GAMMA/tax HEATMAPS
-
-    # beta_vals = np.linspace(0,1,11)
-    # gamma_vals = np.linspace(0,1,11)
-    # alpha_vals = np.linspace(0.01,1,11)
-    # tax_vals = np.linspace(0,0.5,11)
+#     beta_vals = np.linspace(0,1,11)
+#     gamma_vals = np.linspace(0,1,11)
+#     alpha_vals = np.linspace(0,1,11)
+#    # tax_vals = np.linspace(0,0.5,11)
     
-    # adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
-    # adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
-    # adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
-    # adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
+#     adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
+#     adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
+#     adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
+#     adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
 
-    # for i, beta in tqdm(enumerate(beta_vals)):
-    #     for j, gamma in enumerate(gamma_vals):
-    #         results_J1P = []
-    #         results_J1C = []
-    #         results_J2P = []
-    #         results_J2C = []
-    #         for k in range(10):  
-    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=gamma, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-    #                                  tax=0.2, intensity_c=100, intensity_p=100, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
-                
-    #             #let the model run for 10 steps first...
-    #             for _ in range(20):
-    #                 model.step()
-                
-    #             list_1j1 = []
-    #             list_2j1 = []
-
-    #             list_1j2 = []
-    #             list_2j2 = []
-
-    #             # fill first list for the first time
-    #             for _ in range(30):
-    #                 model.step()
-    #                 fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-    #                 list_1j1.append(fill_1)
-    #                 #fill_2 = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
-    #                 #list_1j2.append(fill_2)
-
-    #             while True:  
-    #                 model.step()
-    #                 current =  model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-    #                 list_2j1.append(current)
-
-    #                 #current2 =  model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
-    #                 #list_2j2.append(current2)
-
-    #                 if len(list_2j1) == 30:
-    #                     if list_1j1 == list_2j1: #and list_1j2 == list_2j2:
-    #                         break
-
-    #                     with warnings.catch_warnings():
-    #                         warnings.simplefilter("ignore", category=RuntimeWarning)
-    #                         t_stat1, p_value1 = ttest_ind(list_1j1, list_2j1)
-    #                         #t_stat2, p_value2 = ttest_ind(list_1j2, list_2j2)
-    #                     #t_stat, p_value = ttest_ind(list_1, list_2)
-    #                     #u_stat, p_value = mannwhitneyu(list_1, list_2, alternative='two-sided')
+      # Iterate over interaction parameters
+#     for i, beta in tqdm(enumerate(beta_vals)):
+#         for j, gamma in enumerate(gamma_vals):
+#             results_J1P = []
+#             results_J1C = []
+#             results_J2P = []
+#             results_J2C = []
             
-    #                     if p_value1 > 0.05: #and p_value2 > 0.05:  # Means are not statistically different
-    #                         break
+              # Do desired amount of simulation per interaction parameter combination
+#             for k in range(10):  
+#                 model = Jurisdiction(n_consumers=500, n_producers=500, alpha=gamma, beta=beta, gamma=1/3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+#                                      tax=0.17, intensity_c=10, intensity_p=10, init_c1=0.06, init_c2=0.96, init_p1=0.04, init_p2=0.94)
+                
+#                 #let the model run for 10 steps first...
+#                 for _ in range(10):
+#                     model.step()
+                
+#                 list_1j1 = []
+#                 list_2j1 = []
+
+#                 list_1j2 = []
+#                 list_2j2 = []
+
+#                 # fill first list for the first time
+#                 for _ in range(30):
+#                     model.step()
+#                     fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+#                     list_1j1.append(fill_1)
+#                     #fill_2 = model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
+#                     #list_1j2.append(fill_2)
+
+                  # Model steps until convergence  
+#                 while True:  
+#                     model.step()
+#                     current =  model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+#                     list_2j1.append(current)
+
+#                     #current2 =  model.datacollector.get_model_vars_dataframe()['Percentage green Consumers J2'].iloc[-1]
+#                     #list_2j2.append(current2)
+
+#                     if len(list_2j1) == 30:
+#                         if list_1j1 == list_2j1: #and list_1j2 == list_2j2:
+#                             break
+
+#                         with warnings.catch_warnings():
+#                             warnings.simplefilter("ignore", category=RuntimeWarning)
+#                             t_stat1, p_value1 = ttest_ind(list_1j1, list_2j1)
+#                             #t_stat2, p_value2 = ttest_ind(list_1j2, list_2j2)
+#                         #t_stat, p_value = ttest_ind(list_1, list_2)
+#                         #u_stat, p_value = mannwhitneyu(list_1, list_2, alternative='two-sided')
+            
+#                         if p_value1 > 0.05: #and p_value2 > 0.05:  # Means are not statistically different
+#                             break
                     
-    #                     list_1j1 = list_2j1[:]
-    #                     list_2j1 = []
+#                         list_1j1 = list_2j1[:]
+#                         list_2j1 = []
 
-    #                     #list_1j2 = list_2j2[:]
-    #                     #list_2j2 = []
+#                         #list_1j2 = list_2j2[:]
+#                         #list_2j2 = []
 
 
-    #                 # current_2 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-    #                 # if (current_1 == 0 or current_1 == 1) and (current_2 == 0 or current_2 == 1) :
-    #                 #     break
+#                     # current_2 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+#                     # if (current_1 == 0 or current_1 == 1) and (current_2 == 0 or current_2 == 1) :
+#                     #     break
 
-    #             model_data =  model.datacollector.get_model_vars_dataframe()
-    #             results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
-    #             results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
-    #             results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
-    #             results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+#                 model_data =  model.datacollector.get_model_vars_dataframe()
+#                 results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+#                 results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+#                 results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+#                 results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-    #         adoption_J1P[j,i] = np.mean(results_J1P)
-    #         adoption_J1C[j,i] = np.mean(results_J1C)
-    #         adoption_J2P[j,i] = np.mean(results_J2P)
-    #         adoption_J2C[j,i] = np.mean(results_J2C)
+#             adoption_J1P[j,i] = np.mean(results_J1P)
+#             adoption_J1C[j,i] = np.mean(results_J1C)
+#             adoption_J2P[j,i] = np.mean(results_J2P)
+#             adoption_J2C[j,i] = np.mean(results_J2C)
 
-    # adoption_J1P = np.flipud(adoption_J1P)
-    # adoption_J1C = np.flipud(adoption_J1C)
-    # adoption_J2P = np.flipud(adoption_J2P)
-    # adoption_J2C = np.flipud(adoption_J2C)
-    # fig, axs = plt.subplots(1, 4, figsize=(8, 2))
+      # Flip values to get correct plot
+#     adoption_J1P = np.flipud(adoption_J1P)
+#     adoption_J1C = np.flipud(adoption_J1C)
+#     adoption_J2P = np.flipud(adoption_J2P)
+#     adoption_J2C = np.flipud(adoption_J2C)
+#     fig, axs = plt.subplots(1, 4, figsize=(10, 2.6))#, dpi=500)
 
-    # im1 = axs[0].imshow(adoption_J1P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(alpha_vals), max(alpha_vals)],
-    #                     vmin=0, vmax=1)  
-    # axs[0].set_title('Producers J1')
-    # axs[0].set_xlabel(r'$\beta$')
-    # axs[0].set_ylabel(r'$\gamma$')
+#     im1 = axs[0].imshow(adoption_J1P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(alpha_vals), max(alpha_vals)],
+#                         vmin=0, vmax=1)  
+#     axs[0].set_title('Producers J1')
+#     axs[0].set_xlabel(r'$\beta$',fontsize=13)
+#     axs[0].set_ylabel(r'$\gamma$',fontsize=13)
   
 
-    # im2 = axs[1].imshow(adoption_J1C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(alpha_vals), max(alpha_vals)],
-    #                     vmin=0, vmax=1)  
-    # axs[1].set_title('Consumers J1')
-    # axs[1].set_xlabel(r'$\beta$')
+#     im2 = axs[1].imshow(adoption_J1C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(alpha_vals), max(alpha_vals)],
+#                         vmin=0, vmax=1)  
+#     axs[1].set_title('Consumers J1')
+#     axs[1].set_xlabel(r'$\beta$',fontsize=13)
+#     axs[1].set_yticks([])
 
-    # im3 = axs[2].imshow(adoption_J2P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(alpha_vals), max(alpha_vals)],
-    #                     vmin=0, vmax=1)  
-    # axs[2].set_title('Producers J2')  
-    # axs[2].set_xlabel(r'$\beta$') 
+#     im3 = axs[2].imshow(adoption_J2P, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(alpha_vals), max(alpha_vals)],
+#                         vmin=0, vmax=1)  
+#     axs[2].set_title('Producers J2')  
+#     axs[2].set_xlabel(r'$\beta$',fontsize=13) 
+#     axs[2].set_yticks([])
 
-    # im4 = axs[3].imshow(adoption_J2C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(alpha_vals), max(alpha_vals)],
-    #                     vmin=0, vmax=1)  
-    # axs[3].set_title('Consumers J2') 
-    # axs[3].set_xlabel(r'$\beta$') 
-    # # Add colorbar axis
-    # # cax = fig.add_axes([0.96, 0.15, 0.01, 0.7])  # [left, bottom, width, height]
+#     im4 = axs[3].imshow(adoption_J2C, cmap='gray_r', extent=[min(beta_vals), max(beta_vals), min(alpha_vals), max(alpha_vals)],
+#                         vmin=0, vmax=1)  
+#     axs[3].set_title('Consumers J2') 
+#     axs[3].set_xlabel(r'$\beta$',fontsize=13)
+#     axs[3].set_yticks([]) 
 
-    # # Add colorbar
-    # # cbar = fig.colorbar(im4, cax=cax)
+#     #Add colorbar axis
+#     #cax = fig.add_axes([0.96, 0.15, 0.01, 0.7])  # [left, bottom, width, height]
 
-    # # cbar = fig.colorbar(im4, ax=axs, fraction=0.05, pad=0.05, location='right')
+#     #Add colorbar
+#    #cbar = fig.colorbar(im4, cax=cax)
 
-    # # Set label for the colorbar
-    # # cbar.set_label('Adoption rate')
-    # plt.tight_layout()
+#     #cbar = fig.colorbar(im4, ax=axs, fraction=0.02, pad=0.04, location='right')
+
+#     #Set label for the colorbar
+#     #cbar.set_label('Adoption rate of N')
+#     plt.tight_layout()
+#     plt.show()
+
+
+
+#### Code for running 4x4 ALPHA/BETA/GAMMA/tax HEATMAPS
+
+    # taxes = [0.17, 0.21, 0.25]#, 0.25]    
+    # beta_vals = np.linspace(0,1,11)
+    # gamma_vals = np.linspace(0,1,11)
+    # alpha_vals = np.linspace(0,1,11)
+
+    # #fig, axs = plt.subplots(4, 4, figsize=(9, 14), gridspec_kw={'hspace': 0.5, 'wspace': 0.5})     # settings for 4x4 heatmap
+    # fig, axs = plt.subplots(3, 4, figsize=(9, 12), gridspec_kw={'hspace': 0.4, 'wspace': 0.5})      # settings for 3x4 heatmap
+    # #fig.subplots_adjust(left=0.05, right=0.9, top=0.95, bottom=0.1, hspace=0.15, wspace=0.15)
+
+    # for idx, tax in enumerate(taxes):
+    #     adoption_J1P = np.zeros((len(gamma_vals), len(beta_vals)))
+    #     adoption_J1C = np.zeros((len(gamma_vals), len(beta_vals)))
+    #     adoption_J2P = np.zeros((len(gamma_vals), len(beta_vals)))
+    #     adoption_J2C = np.zeros((len(gamma_vals), len(beta_vals)))
+
+    #     for i, beta in tqdm(enumerate(beta_vals), total=len(beta_vals)):
+    #         for j, alpha in enumerate(alpha_vals):
+    #             results_J1P = []
+    #             results_J1C = []
+    #             results_J2P = []
+    #             results_J2C = []
+    #             for _ in range(30):
+    #                 model = Jurisdiction(n_consumers=500, n_producers=500, alpha=alpha, beta=beta, gamma=0.33,
+    #                                     cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3,
+    #                                     tax=tax, intensity_c=10, intensity_p=10,
+    #                                     init_c1=0.06, init_c2=0.96, init_p1=0.04, init_p2=0.94)
+
+    #                 for _ in range(10):
+    #                     model.step()
+
+    #                 list_1j1 = []
+    #                 list_2j1 = []
+
+    #                 for _ in range(30):
+    #                     model.step()
+    #                     fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+    #                     list_1j1.append(fill_1)
+
+                      # Model steps until convergence
+    #                 while True:
+    #                     model.step()
+    #                     current = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+    #                     list_2j1.append(current)
+
+    #                     if len(list_2j1) == 30:
+    #                         if list_1j1 == list_2j1:
+    #                             break
+
+    #                         with warnings.catch_warnings():
+    #                             warnings.simplefilter("ignore", category=RuntimeWarning)
+    #                             t_stat1, p_value1 = ttest_ind(list_1j1, list_2j1)
+
+    #                         if p_value1 > 0.05:
+    #                             break
+
+    #                         list_1j1 = list_2j1[:]
+    #                         list_2j1 = []
+
+    #                 model_data = model.datacollector.get_model_vars_dataframe()
+    #                 results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #                 results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+    #                 results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+    #                 results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+
+    #             adoption_J1P[j, i] = np.mean(results_J1P)
+    #             adoption_J1C[j, i] = np.mean(results_J1C)
+    #             adoption_J2P[j, i] = np.mean(results_J2P)
+    #             adoption_J2C[j, i] = np.mean(results_J2C)
+
+    #     adoption_J1P = np.flipud(adoption_J1P)
+    #     adoption_J1C = np.flipud(adoption_J1C)
+    #     adoption_J2P = np.flipud(adoption_J2P)
+    #     adoption_J2C = np.flipud(adoption_J2C)
+
+    #     row = idx
+    #     for col, (adoption, title) in enumerate(zip(
+    #             [adoption_J1P, adoption_J1C, adoption_J2P, adoption_J2C],
+    #             ['prod J1', 'cons J1', 'prod J2', 'cons J2'])):
+    #         im = axs[row, col].imshow(adoption, cmap='gray_r',
+    #                                 extent=[min(beta_vals), max(beta_vals), min(gamma_vals), max(gamma_vals)],
+    #                                 vmin=0, vmax=1)
+    #         axs[row, col].set_xticks([0, 0.5, 1]) 
+    #         #axs[row, col].set_title(f'{title}', fontsize=8)
+    #         #axs[row, col].set_xlabel(r'$\beta$', fontsize=10)
+    #         if col == 0:
+    #             axs[row, col].set_ylabel(r'$\alpha$', fontsize=10)
+    #         if row == 0:
+    #             axs[row, col].set_title(f'{title}', fontsize=10)
+    #         if row == 2:
+    #             axs[row, col].set_xlabel(r'$\beta$', fontsize=10)
+    #         #else:
+    #             #axs[row, col].set_yticks([])
+    #     #fig.text(0.01, 0.88 - (idx * 0.22), f'Tax: {tax}', ha='left', fontsize=9)  # settings for 4x4 heatmap
+    #     fig.text(0.01, 0.84 - (idx * 0.29), f'Tax: {tax}', ha='left', fontsize=9)  # settings for 3x4 heatmap
+
+    # # Add a colorbar for the entire figure
+    # cbar = fig.colorbar(im, ax=axs, fraction=0.05, pad=0.04)
+    # cbar.set_label('Adoption rate of N')
+
+    # plt.tight_layout()#pad=0.5)
+    # #plt.savefig('D:/tijn2/CS/thesis/result figures/in thesis/heatmaps/bg heatmap,4 taxes,dpi=500.png', dpi=500)
     # plt.show()
 
 
 
-    ################ ADOPTION AS A FUNCTION OF TAX/ALPHA/BETA
+    ################ ADOPTION AS A FUNCTION OF ALPHA/BETA/GAMMA
 
-    #tax_values = np.linspace(0.05, 0.5, num=20)
-    # alpha_vals = np.linspace(0.01,1,num=10)
+    #alpha_vals = np.linspace(0.01,1,num=20)
     # gamma_vals = np.linspace(0,1,num=20)
-    # beta_vals = np.linspace(0,1,num=20)
-    # rat_vals = [1,10,100]
-    # # Dictionary to store the results
+    #beta_vals = np.linspace(0,1,num=20)
+    # # rat_vals = [1,10,100]
+
+
+    # # # Dictionary to store the results
     # average_results_J1P = {}
     # average_results_J1C = {}
     # average_results_J2P = {}
     # average_results_J2C = {}
-    # for beta in tqdm(beta_vals):
+    # std_results_J1P = {}
+    # std_results_J1C = {}
+    # std_results_J2P = {}
+    # std_results_J2C = {}
+    # for alpha in tqdm(tax_values):
     #     results_J1P = []
     #     results_J1C = []
     #     results_J2P = []
     #     results_J2C = []
-    #     for i in range(100):  
-    #         model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta gamma=0.1, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-    #                              tax=0.2, intensity_c=10, intensity_p=10, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
+    #     for i in range(10):  
+    #         model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.3, gamma=0.3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+    #                              tax=alpha, intensity_c=10, intensity_p=10, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
 
     #         for _ in range(10):
     #             model.step()
@@ -1056,20 +1230,151 @@ if __name__ == "__main__":
     #         results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
     #         results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
 
-    #     average_results_J1P[beta] = np.mean(results_J1P)
-    #     average_results_J1C[beta] = np.mean(results_J1C)
-    #     average_results_J2P[beta] = np.mean(results_J2P)
-    #     average_results_J2C[beta] = np.mean(results_J2C)
 
-    # plt.plot(average_results_J1P.keys(), average_results_J1P.values(), label = 'Jurisdiction 1') 
-    # plt.plot(average_results_J2P.keys(), average_results_J2P.values(), label= 'Jurisdiction 2')
-    # plt.xlabel(r'$\beta$')
-    # plt.ylabel('Adoption Rate')
-    # plt.legend()
-    # plt.ylim(-0.1, 1.1) 
+    #     average_results_J1P[alpha] = np.mean(results_J1P)
+    #     average_results_J1C[alpha] = np.mean(results_J1C)
+    #     average_results_J2P[alpha] = np.mean(results_J2P)
+    #     average_results_J2C[alpha] = np.mean(results_J2C)
+    #     std_results_J1P[alpha] = np.std(results_J1P)
+    #     std_results_J1C[alpha] = np.std(results_J1C)
+    #     std_results_J2P[alpha] = np.std(results_J2P)
+    #     std_results_J2C[alpha] = np.std(results_J2C)
+
+
+        
+    # beta_keys = list(average_results_J1P.keys())
+
+    # mean_PJ1 = np.array(list(average_results_J1P.values()))
+    # std_PJ1 = np.array(list(std_results_J1P.values()))
+    # plt.plot(beta_keys, mean_PJ1, label = 'producers J1')
+    # plt.fill_between(beta_keys, np.clip(mean_PJ1 - std_PJ1, 0, 1), np.clip(mean_PJ1 + std_PJ1, 0, 1), alpha=0.2)
+
+    # mean_CJ1 = np.array(list(average_results_J1C.values()))
+    # std_CJ1 = np.array(list(std_results_J1C.values()))
+    # plt.plot(beta_keys, mean_CJ1, label='consumers J1')#, color='blue')
+    # plt.fill_between(beta_keys, np.clip(mean_CJ1 - std_CJ1, 0, 1), np.clip(mean_CJ1 + std_CJ1, 0, 1), alpha=0.2)
+    
+    
+    # mean_PJ2 = np.array(list(average_results_J2P.values()))
+    # std_PJ2 = np.array(list(std_results_J2P.values()))
+    # plt.plot(beta_keys, mean_PJ2, label='producers J2')
+    # plt.fill_between(beta_keys, np.clip(mean_PJ2 - std_PJ2, 0, 1), np.clip(mean_PJ2 + std_PJ2, 0, 1), alpha=0.2)
+
+    # # Consumers J2
+    # mean_CJ2 = np.array(list(average_results_J2C.values()))
+    # std_CJ2 = np.array(list(std_results_J2C.values()))
+    # plt.plot(beta_keys, mean_CJ2, label='consumers J2')#, color='green')
+    # plt.fill_between(beta_keys, np.clip(mean_CJ2 - std_CJ2, 0, 1), np.clip(mean_CJ2 + std_CJ2, 0, 1), alpha=0.2)
+
+    # #plt.xlabel(r'$\alpha$',fontsize=18)
+    # plt.xlabel('tax',fontsize=18)
+    # plt.xticks(fontsize=12)
+    # plt.yticks(fontsize=12)
+    # plt.ylabel('Adoption Rate of N',fontsize=15)
+    # plt.legend(fontsize=15)
+    # plt.ylim(-0.1, 1.1)
+    # plt.grid(True) 
 
     # plt.tight_layout()
+    # #plt.savefig('D:/tijn2/CS/thesis/result figures/in thesis/adoption vs alpha/bg=0,tax=0.2,250runs,dpi=500.png', dpi=500)
     # plt.show()
+
+
+
+
+
+
+    #### TAX VS ADOPTION
+    # tax_values = np.linspace(0.12, 0.3, num=20)
+    # beta_vals = [0.3, 1]
+
+    # average_results_J1P = {beta: {} for beta in beta_vals}
+    # average_results_J1C = {beta: {} for beta in beta_vals}
+    # average_results_J2P = {beta: {} for beta in beta_vals}
+    # average_results_J2C = {beta: {} for beta in beta_vals}
+
+    # for beta in beta_vals:
+    #     for alpha in tqdm(tax_values):
+    #         results_J1P = []
+    #         results_J1C = []
+    #         results_J2P = []
+    #         results_J2C = []
+    #         for i in range(50):  
+    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=0.3,
+    #                                 cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3,
+    #                                 tax=alpha, intensity_c=10, intensity_p=10, init_c1=0.05, init_c2=0.95,
+    #                                 init_p1=0.05, init_p2=0.95)
+
+    #             for _ in range(10):
+    #                 model.step()
+
+    #             list_1 = []
+    #             list_2 = []
+
+    #             for _ in range(10):
+    #                 model.step()
+    #                 fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+    #                 list_1.append(fill_1)
+
+    #             while True:
+    #                 model.step()
+    #                 current = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+    #                 list_2.append(current)
+
+    #                 if len(list_2) == 10:
+    #                     if list_1 == list_2:
+    #                         break
+
+    #                     with warnings.catch_warnings():
+    #                         warnings.simplefilter("ignore", category=RuntimeWarning)
+    #                         t_stat, p_value = ttest_ind(list_1, list_2)
+
+    #                     if p_value > 0.05:  # Means are not statistically different
+    #                         break
+
+    #                     list_1 = list_2[:]
+    #                     list_2 = []
+
+    #             model_data = model.datacollector.get_model_vars_dataframe()
+    #             results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #             results_J1C.append(model_data['Percentage green Consumers J1'].iloc[-1])
+    #             results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+    #             results_J2C.append(model_data['Percentage green Consumers J2'].iloc[-1])
+
+    #         average_results_J1P[beta][alpha] = np.mean(results_J1P)
+    #         average_results_J1C[beta][alpha] = np.mean(results_J1C)
+    #         average_results_J2P[beta][alpha] = np.mean(results_J2P)
+    #         average_results_J2C[beta][alpha] = np.mean(results_J2C)
+
+    # fig, axs = plt.subplots(2, figsize=(8, 5))
+
+    # colors = {'J1': 'blue', 'J2': 'orange'}
+
+    # for beta, linestyle in zip(beta_vals, ['-', '--']):
+    #     # Producers J1 and J2
+    #     axs[0].plot(average_results_J1P[beta].keys(), average_results_J1P[beta].values(), label=f'Producers J1 ($\\beta={beta}$)', linestyle=linestyle, color=colors['J1'])
+    #     axs[0].plot(average_results_J2P[beta].keys(), average_results_J2P[beta].values(), label=f'Producers J2 ($\\beta={beta}$)', linestyle=linestyle, color=colors['J2'])
+
+    #     # Consumers J1 and J2
+    #     axs[1].plot(average_results_J1C[beta].keys(), average_results_J1C[beta].values(), label=f'Consumers J1 ($\\beta={beta}$)', linestyle=linestyle, color=colors['J1'])
+    #     axs[1].plot(average_results_J2C[beta].keys(), average_results_J2C[beta].values(), label=f'Consumers J2 ($\\beta={beta}$)', linestyle=linestyle, color=colors['J2'])
+
+    # axs[0].set_title('Producers')
+    # axs[0].set_xlabel('Tax')
+    # axs[0].set_ylabel('Adoption Rate of N')
+    # axs[0].set_ylim(-0.1, 1.1)
+    # axs[0].legend()
+
+    # axs[1].set_title('Consumers')
+    # axs[1].set_xlabel('Tax')
+    # axs[1].set_ylabel('Adoption Rate of N')
+    # axs[1].set_ylim(-0.1, 1.1)
+    # axs[1].legend()
+
+    # plt.tight_layout()
+    # #plt.savefig('D:/tijn2/CS/thesis/result figures/in thesis/adoption vs tax/b=0.3 and 1,dpi=500.png', dpi=500)
+    # plt.show()
+
 
 
     # results_per_rat_val = {rat: {'J1P': {}, 'J1C': {}, 'J2P': {}, 'J2C': {}} for rat in rat_vals}
@@ -1154,20 +1459,27 @@ if __name__ == "__main__":
 
 
 
-    ####### susceptibility to beta for rat values
+    ####### Sensativity computation 1, not used in thesis now
                       
-    # beta_vals = [0.6, 1]  # Only consider beta=0 and beta=1
-    # rat_vals = [1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,30,40,50,100]#    np.linspace(1, 100, num=100)
+    #beta_vals = [0.2, 1]  
+    # rat_vals = [1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,30,40,50,75,100]#    np.linspace(1, 100, num=100)
+    # rat_sus_j1 = {}
+    # rat_sus_j2 = {}
+    # beta_vals = np.linspace(0,1,30)
+    
 
-    # # Dictionary to store the results for each rat_val
-    # results_per_rat_val = {rat: {'J1P': {0: 0, 1: 0}, 'J2P': {0: 0, 1: 0}} for rat in rat_vals}
+    #### SENSATIVITY COMPUTATION 1
+    # Dictionary to store the results for each rat_val
+   # results_per_rat_val = {rat: {'J1P': {0: 0, 1: 0}, 'J2P': {0: 0, 1: 0}} for rat in rat_vals}
 
     # for rat in tqdm(rat_vals):
+    #     results_J1_lowB = []
+    #     results_J1_highB = []
+    #     results_J2_lowB = []
+    #     results_J2_highB = []
     #     for beta in beta_vals:
-    #         results_J1P = []
-    #         results_J2P = []
-    #         for i in range(10):  
-    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=1, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+    #         for i in range(30):  
+    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=0.3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
     #                                 tax=0.2, intensity_c=rat, intensity_p=rat, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
 
     #             for _ in range(10):
@@ -1202,115 +1514,120 @@ if __name__ == "__main__":
     #                     list_2 = []
                         
     #             model_data =  model.datacollector.get_model_vars_dataframe()
-    #             results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
-    #             results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
 
-    #         results_per_rat_val[rat]['J1P'][beta] = np.mean(results_J1P)
-    #         results_per_rat_val[rat]['J2P'][beta] = np.mean(results_J2P)
+    #             if beta == beta_vals[0]:
+    #                 results_J1_lowB.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #                 results_J2_lowB.append(model_data['Percentage green Producers J2'].iloc[-1])
+
+    #             if beta == beta_vals[1]:
+    #                 results_J1_highB.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #                 results_J2_highB.append(model_data['Percentage green Producers J2'].iloc[-1])
+
+    #             #results_J1P.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #             #results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
+
+    #     rat_sus_j1[rat] = np.abs(np.mean(results_J1_lowB) - np.mean(results_J1_highB))
+    #     rat_sus_j2[rat] = np.abs(np.mean(results_J2_lowB) - np.mean(results_J2_highB))
+
+    #         #print(rat, beta, 'j1:', np.mean(results_J1P))
+    #         #print(rat, beta, 'j2:', np.mean(results_J2P))
+    #         #results_per_rat_val[rat]['J1P'][beta] = np.mean(results_J1P)
+    #         #results_per_rat_val[rat]['J2P'][beta] = np.mean(results_J2P)
 
     # # Calculate susceptibility to beta
-    # susceptibility_J1P = {rat: results_per_rat_val[rat]['J1P'][1] - results_per_rat_val[rat]['J1P'][0] for rat in rat_vals}
-    # susceptibility_J2P = {rat: results_per_rat_val[rat]['J2P'][1] - results_per_rat_val[rat]['J2P'][0] for rat in rat_vals}
+    # #susceptibility_J1P = {rat: results_per_rat_val[rat]['J1P'][1] - results_per_rat_val[rat]['J1P'][0] for rat in rat_vals}
+    # #susceptibility_J2P = {rat: results_per_rat_val[rat]['J2P'][1] - results_per_rat_val[rat]['J2P'][0] for rat in rat_vals}
 
     # # Plotting results
     # plt.figure(figsize=(8, 5))
-    # plt.plot(susceptibility_J1P.keys(), susceptibility_J1P.values(), label='Jurisdiction 1')
-    # plt.plot(susceptibility_J2P.keys(), susceptibility_J2P.values(), label='Jurisdiction 2')
-    # plt.xlabel('rat_vals')
-    # plt.ylabel('Susceptibility to β')
-    # plt.title('Susceptibility to β for Different rat_vals')
+    # plt.plot(rat_sus_j1.keys(), rat_sus_j1.values(), label='Jurisdiction 1')
+    # plt.plot(rat_sus_j2.keys(), rat_sus_j2.values(), label='Jurisdiction 2')
+    # plt.xlabel('rationality')
+    # plt.ylabel(r'Susceptibility to $\beta$')
+    # #plt.title('Susceptibility to β for Different rat_vals')
     # plt.legend()
     # plt.ylim(-0.1, 1.1)
-    # plt.tight_layout()
-    # plt.show()
-
-    # fig, axs = plt.subplots(2)
-    # axs[0].plot(average_results_J1P.keys(), average_results_J1P.values(), label='J1')
-    # axs[0].plot(average_results_J2P.keys(), average_results_J2P.values(), label='J2')
-    # axs[0].set_title('Producers')
-    # axs[0].set_xlabel('Alpha') 
-    # axs[0].set_ylabel('Adoption rate of green')
-    # axs[0].set_ylim(-0.1,1.1)
-    # axs[0].legend()
-
-    # axs[1].plot(average_results_J1C.keys(), average_results_J1C.values(), label='J1')
-    # axs[1].plot(average_results_J2C.keys(), average_results_J2C.values(), label='J2')
-    # axs[1].set_title('Consumers')
-    # axs[1].set_xlabel('Alpha') 
-    # axs[1].set_ylabel('Adoption rate of green')
-    # axs[1].set_ylim(-0.1,1.1)
-    # axs[1].legend()
-
+    # plt.grid(True)
     # plt.tight_layout()
     # plt.show()
 
 
-    #################### Min TAX FOR ADOPTION COST OF GREEN
-    #tax_values = np.linspace(0, 0.35, num=15)
-#     beta_values = np.linspace(0,1,num=25)
-#     cost_b_vals = np.linspace(0.1,0.45,num=15)
-#     cost_g_vals = np.linspace(0.2,0.50,num=10)
-#     rat_vals = [1,5,10,100]
-#     tolerance = 0.005
-#     adoption_level = 0.5
-
-#     rat1 = dict()
-#     rat5 = dict()
-#     rat10 = dict()
-#     rat100 = dict()
-#     for rat in rat_vals:
-#         for cg in tqdm(cost_g_vals):
-#             min_tax = 0
-#             max_tax = 0.5
-#             while abs(max_tax - min_tax) > tolerance:
-#                 mid_tax = (min_tax + max_tax) / 2
-
-#                 results_J2P = []
-#                 for i in range(10):  
-#                     model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.5, gamma=0.5, cost_brown=0.25, cost_green=cg, 
-#                                          ext_brown=0.1, ext_green=0.3, tax=mid_tax,  intensity_c=rat, intensity_p=rat, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
-#                     for j in range(200):  
-#                         model.step()
-
-#                     model_data =  model.datacollector.get_model_vars_dataframe()
-#                     results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
-
-                
-#                 if np.mean(results_J2P) < adoption_level:
-#                     min_tax = mid_tax
-#                 else:
-#                     max_tax = mid_tax
-            
-#             if max_tax != 0.5:
-#                 if rat == 1:
-#                     rat1[cg] = max_tax
-#                 elif rat == 5:
-#                     rat5[cg] = max_tax
-#                 elif rat == 10:
-#                     rat10[cg] = max_tax
-#                 else:
-#                     rat100[cg] = max_tax
-#                 #break # we dont need to check for more tax values for this cost value
-
-#     plt.plot(rat1.keys(), rat1.values(), label='rat1')
-#     plt.plot(rat5.keys(), rat5.values(), label='rat5')
-#     plt.plot(rat10.keys(), rat10.values(), label='rat10')
-#     plt.plot(rat100.keys(), rat100.values(), label='rat100')
-
-#     tax_diagonal = cost_g_vals - 0.25
-#     plt.plot(cost_g_vals, tax_diagonal, linestyle='--', color='black', label='costB + tax = costG')
-#     #y = [0.25 - x_val for x_val in cost_g_vals]  # Calculate y values based on the sum of x and y equaling 0.45
-#     #plt.plot(cost_b_vals, y, color='black', linestyle='--', label='costB + tax = costG')
-
-#     plt.xlabel('Cost Green')
-#     plt.ylabel('Tax')
-#     plt.ylim(0, 0.5) 
-#    # plt.title('Tax Values for Different Cost Brown (rat5 and rat10)')
-#     plt.legend()
-#     plt.show()
 
 
-######## Min TAX FOR ADOPTION COST OF GREEN with std dev
+
+
+    #### Sensitivity computation 2, used in thesis
+    # variance_J1 = {}
+    # variance_J2 = {}
+
+    # for rat in tqdm(rat_vals):
+    #     adoption_J1 = []
+    #     adoption_J2 = []
+
+    #     for beta in beta_vals:
+    #         results_J1 = []
+    #         results_J2 = []
+    #         for i in range(30):
+    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=0.3,
+    #                                 cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3,
+    #                                 tax=0.2, intensity_c=rat, intensity_p=rat,
+    #                                 init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
+
+    #             for _ in range(10):
+    #                 model.step()
+
+    #             list_1 = []
+    #             list_2 = []
+
+    #             for _ in range(30):
+    #                 model.step()
+    #                 fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+    #                 list_1.append(fill_1)
+
+    #             while True:
+    #                 model.step()
+    #                 current = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+    #                 list_2.append(current)
+
+    #                 if len(list_2) == 30:
+    #                     if list_1 == list_2:
+    #                         break
+
+    #                     with warnings.catch_warnings():
+    #                         warnings.simplefilter("ignore", category=RuntimeWarning)
+    #                         t_stat, p_value = ttest_ind(list_1, list_2)
+
+    #                     if p_value > 0.05:
+    #                         break
+
+    #                     list_1 = list_2[:]
+    #                     list_2 = []
+
+    #             model_data = model.datacollector.get_model_vars_dataframe()
+    #             results_J1.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #             results_J2.append(model_data['Percentage green Producers J2'].iloc[-1])
+
+    #         adoption_J1.append(np.mean(results_J1))
+    #         adoption_J2.append(np.mean(results_J2))
+
+    #     variance_J1[rat] = np.var(adoption_J1)
+    #     variance_J2[rat] = np.var(adoption_J2)
+
+    # # Plotting the variance of adoption rates
+    # plt.figure(figsize=(8, 5))
+    # plt.plot(variance_J1.keys(), variance_J1.values(), label='Jurisdiction 1')
+    # plt.plot(variance_J2.keys(), variance_J2.values(), label='Jurisdiction 2')
+    # plt.xlabel('Rationality')
+    # plt.ylabel(r'Variance of Adoption Rates across $\beta$')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
+
+              
+
+
+#### Min Tax for adoption with std dev. Not used for graphs in thesis but can check with this if parallel code produces same result as normal code
 #     cost_g_vals = np.linspace(0.2,0.5,num=10)
 #     rat_vals = [1,5,10,100]
 #     tolerance = 0.005
@@ -1444,69 +1761,75 @@ if __name__ == "__main__":
 
 
 
-################# PARALLEL CODE TRY OUT
-    
+#### Parallel code for computing MIN tax
+
+# Define the model parameters
     # cost_g_vals = np.linspace(0.2, 0.5, num=10)
-    # rat_vals = [1, 5, 10, 100]
-    # tolerance = 0.005
+    # alpha_vals = np.linspace(0,1,num=11)
+    # beta_vals = np.linspace(0,1,num=11)
+    # #rat_vals = [1, 5, 10, 100]
+    # rat_vals = [5,10]
+    # tolerance = 0.01
     # adoption_level = 0.5
-    # runs_per_tax = 5
+    # runs_per_tax = 30
 
     # # Dictionary to store results
     # results_dict = {1: {}, 5: {}, 10: {}, 100: {}}
+    # results_dict = {5: {}, 10: {}}
 
     # # Function to run a single simulation
-    # def run_simulation(rat, cg, mid_tax, n_steps_initial=10, n_steps_list=10):
+    # def run_simulation(rat, cg, mid_tax, n_steps_initial=10, n_steps_list=30):
     #     results_J2P = []
-    #     for _ in range(10):
+    #     for _ in range(1):
     #         model = Jurisdiction(
-    #             n_consumers=500, n_producers=500, alpha=0, beta=2/4, gamma=2/4, cost_brown=0.25, cost_green=cg, ext_brown=0.1, ext_green=0.3, tax=mid_tax,
+    #             n_consumers=500, n_producers=500, alpha=0, beta=3/4, gamma=3/4,
+    #             cost_brown=0.25, cost_green=cg, ext_brown=0.1, ext_green=0.3, tax=mid_tax,
     #             intensity_c=rat, intensity_p=rat, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
 
     #         # Let the model run for initial steps
-    #         # for _ in range(n_steps_initial):
-    #         #     model.step()
+    #         for _ in range(n_steps_initial):
+    #             model.step()
 
-    #         # list_1 = []
-    #         # list_2 = []
+    #         list_1 = []
+    #         list_2 = []
 
-    #         # # Fill first list
-    #         # for _ in range(n_steps_list):
-    #         #     model.step()
-    #         #     fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-    #         #     list_1.append(fill_1)
+    #         # Fill first list
+    #         for _ in range(n_steps_list):
+    #             model.step()
+    #             fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+    #             list_1.append(fill_1)
 
-    #         # while True:
+    #         while True:
+    #             model.step()
+    #             current = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
+    #             list_2.append(current)
+
+    #             if len(list_2) == n_steps_list:
+    #                 if list_1 == list_2:
+    #                     break
+
+    #                 with warnings.catch_warnings():
+    #                     warnings.simplefilter("ignore", category=RuntimeWarning)
+    #                     t_stat, p_value = ttest_ind(list_1, list_2)
+
+    #                 if p_value > 0.05:  # Means are not statistically different
+    #                     break
+
+    #                 list_1 = list_2[:]
+    #                 list_2 = []
+
+
+    #         # last_10_values = []
+    #         # for _ in range(200):  
     #         #     model.step()
     #         #     current = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-    #         #     list_2.append(current)
 
-    #         #     if len(list_2) == n_steps_list:
-    #         #         if list_1 == list_2:
-    #         #             break
-
-    #         #         with warnings.catch_warnings():
-    #         #             warnings.simplefilter("ignore", category=RuntimeWarning)
-    #         #             t_stat, p_value = ttest_ind(list_1, list_2)
-
-    #         #         if p_value > 0.05:  # Means are not statistically different
-    #         #             break
-
-    #         #         list_1 = list_2[:]
-    #         #         list_2 = []
-
-
-    #         last_10_values = []
-    #         for _ in range(200):  
-    #             model.step()
-    #             # current = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-
-    #             # last_10_values.append(current)
-    #             # if len(last_10_values) > 10:
-    #             #     last_10_values.pop(0)
-    #             # current_sum = sum(last_10_values)
-    #             # if current_sum == 0 or current_sum == 10:
-    #             #     break
+    #         #     last_10_values.append(current)
+    #         #     if len(last_10_values) > 10:
+    #         #         last_10_values.pop(0)
+    #         #     current_sum = sum(last_10_values)
+    #         #     if current_sum == 0 or current_sum == 10:
+    #         #         break
 
     #         model_data = model.datacollector.get_model_vars_dataframe()
     #         results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
@@ -1527,274 +1850,54 @@ if __name__ == "__main__":
     #         else:
     #             max_tax = mid_tax
 
-    #     return max_tax
+    #     #if max_tax < 0.5:
+    #      #   return max_tax
 
-    # # Parallelize the optimization process
+        
+    #     if max_tax == 0.5:
+    #         return 5 ## A value that we do not show in the graph
+    #     else:
+    #         return max_tax
+
+    # # Run the optimization for each combination of rat and cg values
     # for rat in rat_vals:
-    #     results = Parallel(n_jobs=-1)(
-    #         delayed(optimize_tax)(rat, cg) for cg in tqdm(cost_g_vals)
-    #     )
-    #     results_dict[rat] = dict(zip(cost_g_vals, results))
+    #     for cg in tqdm(cost_g_vals):
+    #         max_taxes = Parallel(n_jobs=-1)(
+    #             delayed(optimize_tax)(rat, cg) for _ in range(runs_per_tax))
+
+    #         if cg not in results_dict[rat]:
+    #             results_dict[rat][cg] = max_taxes
 
     # # Plot the results
-    # for rat, label in zip(rat_vals, ['rat1', 'rat5', 'rat10', 'rat100']):
+    # for rat, label in zip(rat_vals, ['r=1', 'r=5', 'r=10', 'r=100']):
     #     keys = list(results_dict[rat].keys())
-    #     values = list(results_dict[rat].values())
-    #     means = [np.mean([v]) for v in values]
-    #     std_devs = [np.std([v]) for v in values]
-    #     plt.errorbar(keys, means, yerr=std_devs, label=label, fmt='-o', capsize=5)
+    #     means = [np.mean(results_dict[rat][key]) for key in keys]
+    #     std_devs = [np.std(results_dict[rat][key]) for key in keys]
+    #     plt.errorbar(keys, means, yerr=std_devs, label=label, fmt='-o', capsize=2)
+
+    #     #plt.plot(keys, means, label=label, marker='o')
+    #     #plt.fill_between(keys, np.array(means) - np.array(std_devs), np.array(means) + np.array(std_devs), alpha=0.2)
 
     # tax_diagonal = cost_g_vals - 0.25
-    # plt.plot(cost_g_vals, tax_diagonal, linestyle='--', color='black', label='costB + tax = costG')
+    # plt.plot(cost_g_vals, tax_diagonal, linestyle='--', color='black', label='cost O + tax = cost N')
+
+    # #plt.axhline(y=0.2, color='black', linestyle='--', label='Cost O + Tax = Cost N')
 
     # # Customize plot labels and title
-    # plt.xlabel('Cost Green')
-    # plt.ylabel('Tax')
-    # plt.ylim(0, 0.5)
+    # #plt.xlabel(r'$\alpha$',fontsize=14)
+    # plt.xlabel("cost of $N$")
+    # plt.ylabel('Tax',fontsize=14)
+    # plt.ylim(-0.01, 0.55)
     # plt.grid(True)
-    # plt.legend()
-    # plt.show()
-
-
-
-# Define the model parameters
-    cost_g_vals = np.linspace(0.2, 0.5, num=10)
-    alpha_vals = np.linspace(0,1,num=11)
-    beta_vals = np.linspace(0,1,num=11)
-    rat_vals = [1, 5, 10, 100]
-    tolerance = 0.01
-    adoption_level = 0.5
-    runs_per_tax = 3
-
-    # Dictionary to store results
-    results_dict = {1: {}, 5: {}, 10: {}, 100: {}}
-
-    # Function to run a single simulation
-    def run_simulation(rat, cg, mid_tax, n_steps_initial=10, n_steps_list=30):
-        results_J2P = []
-        for _ in range(10):
-            model = Jurisdiction(
-                n_consumers=500, n_producers=500, alpha=0, beta=0, gamma=0,
-                cost_brown=0.25, cost_green=cg, ext_brown=0.1, ext_green=0.3, tax=mid_tax,
-                intensity_c=rat, intensity_p=rat, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
-
-            # Let the model run for initial steps
-            for _ in range(n_steps_initial):
-                model.step()
-
-            list_1 = []
-            list_2 = []
-
-            # Fill first list
-            for _ in range(n_steps_list):
-                model.step()
-                fill_1 = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-                list_1.append(fill_1)
-
-            while True:
-                model.step()
-                current = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-                list_2.append(current)
-
-                if len(list_2) == n_steps_list:
-                    if list_1 == list_2:
-                        break
-
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore", category=RuntimeWarning)
-                        t_stat, p_value = ttest_ind(list_1, list_2)
-
-                    if p_value > 0.05:  # Means are not statistically different
-                        break
-
-                    list_1 = list_2[:]
-                    list_2 = []
-
-
-            # last_10_values = []
-            # for _ in range(200):  
-            #     model.step()
-            #     current = model.datacollector.get_model_vars_dataframe()['Percentage green Producers J2'].iloc[-1]
-
-            #     last_10_values.append(current)
-            #     if len(last_10_values) > 10:
-            #         last_10_values.pop(0)
-            #     current_sum = sum(last_10_values)
-            #     if current_sum == 0 or current_sum == 10:
-            #         break
-
-            model_data = model.datacollector.get_model_vars_dataframe()
-            results_J2P.append(model_data['Percentage green Consumers J2'].iloc[-1])
-
-        return np.mean(results_J2P)
-
-    # Function to optimize tax for given parameters
-    def optimize_tax(rat, cg):
-        min_tax = 0
-        max_tax = 0.5
-        while abs(max_tax - min_tax) > tolerance:
-            mid_tax = (min_tax + max_tax) / 2
-
-            mean_result = run_simulation(rat, cg, mid_tax)
-
-            if mean_result < adoption_level:
-                min_tax = mid_tax
-            else:
-                max_tax = mid_tax
-
-        return max_tax
-
-    # Run the optimization for each combination of rat and cg values
-    for rat in rat_vals:
-        for cg in tqdm(cost_g_vals):
-            max_taxes = Parallel(n_jobs=-1)(
-                delayed(optimize_tax)(rat, cg) for _ in range(runs_per_tax))
-
-            if cg not in results_dict[rat]:
-                results_dict[rat][cg] = max_taxes
-
-    # Plot the results
-    for rat, label in zip(rat_vals, ['rat1', 'rat5', 'rat10', 'rat100']):
-        keys = list(results_dict[rat].keys())
-        means = [np.mean(results_dict[rat][key]) for key in keys]
-        std_devs = [np.std(results_dict[rat][key]) for key in keys]
-        plt.errorbar(keys, means, yerr=std_devs, label=label, fmt='-o', capsize=2)
-
-    tax_diagonal = cost_g_vals - 0.25
-    plt.plot(cost_g_vals, tax_diagonal, linestyle='--', color='black', label='cost O + tax = cost N')
-
-    #plt.axhline(y=0.2, color='black', linestyle='--', label='Cost O + Tax = Cost N')
-
-    # Customize plot labels and title
-    #plt.xlabel(r'$\alpha$')
-    plt.xlabel("cost of $N$")
-    plt.ylabel('Tax')
-    plt.ylim(-0.01, 0.5)
-    plt.grid(True)
-    plt.legend()
-    plt.show()
-
-
-
-
-
-    # #################### MIN TAX FOR X% ADOPTION
-
-    # # #tax_values = np.linspace(0.15, 0.30, num=15)
-    # beta_values = np.linspace(0,1,num=11)
-    # #alpha_values = np.linspace(0,1,num=11)
-    
-    # rat_vals = [1,5,10,100]
-    # tolerance = 0.005
-    # adoption_level = 0.5
-
-    # #DICTS
-    # rat1P1 = dict()
-    # rat1P2 = dict()
-    # rat5P1 = dict()
-    # rat5P2 = dict()
-    # rat10P1 = dict()
-    # rat10P2 = dict()
-    # rat100P1 = dict()
-    # rat100P2 = dict()
-
-
-    # for rat in rat_vals:
-    #     for beta in tqdm(beta_values):
-    #         min_tax = 0
-    #         max_tax = 0.5
-    #         while abs(max_tax - min_tax) > tolerance:
-    #             mid_tax = (min_tax + max_tax) / 2
-
-    #             results_P1 = []
-    #             #results_P2 = []
-    #             # results_C1 = []
-    #             # results_C2 = []
-    #             for i in range(10):  
-    #                 model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=beta, gamma=1/3, cost_brown=0.25, cost_green=0.45, 
-    #                                      ext_brown=0.1, ext_green=0.3, tax=mid_tax, intensity_c=rat, intensity_p=rat, init_c1=0.05, init_c2=0.95, init_p1=0.05, init_p2=0.95)
-    #                 for j in range(200):  
-    #                     model.step()
-
-    #                 model_data =  model.datacollector.get_model_vars_dataframe()
-    #                 results_P1.append(model_data['Percentage green Producers J2'].iloc[-1])
-    #                 #results_P2.append(model_data['Percentage green Producers J2'].iloc[-1])
-    #                 # results_C1.append(model_data['Percentage green Producers J2'].iloc[-1])
-    #                 # results_C2.append(model_data['Percentage green Consumers J2'].iloc[-1])
-
-    #             if np.mean(results_P1) < adoption_level:
-    #                 min_tax = mid_tax
-    #             else:
-    #                 max_tax = mid_tax
-
-    #         if max_tax != 0.5:
-    #             if rat == 1:
-    #                 if beta not in rat1P1:
-    #                     rat1P1[beta] = max_tax
-    #             elif rat == 5:
-    #                 if beta not in rat5P1:  # Make sure to add only 1 value per beta value and not overwrite
-    #                     rat5P1[beta] = max_tax
-    #             elif rat == 10:
-    #                 if beta not in rat10P1:
-    #                     rat10P1[beta] = max_tax
-    #             else:
-    #                 if beta not in rat100P1:
-    #                     rat100P1[beta] = max_tax
-                        
-    #             #     if rat == 1:
-    #             #         if beta not in rat1P2:
-    #             #             rat1P2[beta] = tax
-    #             #     elif rat == 5:
-    #             #         if beta not in rat5P2:  # Make sure to add only 1 value per beta value and not overwrite
-    #             #             rat5P2[beta] = tax
-    #             #     elif rat == 10:
-    #             #         if beta not in rat10P2:
-    #             #             rat10P2[beta] = tax
-    #             #     else:
-    #             #         if beta not in rat100P2:
-    #             #             rat100P2[beta] = tax
-
-    #             # if np.mean(results_P1) >= adopt_level and np.mean(results_P2) >= adopt_level:
-    #             #     break
-
-    
-    # plt.plot(rat1P1.keys(), rat1P1.values(), label='rat1')
-    # plt.plot(rat5P1.keys(), rat5P1.values(), label='rat5')
-    # plt.plot(rat10P1.keys(), rat10P1.values(), label='rat10')
-    # plt.plot(rat100P1.keys(), rat100P1.values(), label='rat100')
-    # plt.axhline(y=0.2, color='black', linestyle='--', label='tax + cost brown = cost green')
-    # plt.xlabel('Beta')
-    # plt.xlim(0,1)
-    # plt.ylabel('Tax')
-    # plt.ylim(0, 0.5)
-    # #plt.title('Min tax for', adoption_level, 'adoption')
-    # plt.legend()
-    # plt.show()
-
-    # fig, axes = plt.subplots(1, 2)
-    # #axes[0].plot(rat1P1.keys(), rat1P1.values(), label='rat1 Cons J1')
-    # axes[0].plot(rat5P1.keys(), rat5P1.values(), label='rat5 cons J1')
-    # axes[0].plot(rat10P1.keys(), rat10P1.values(), label='rat10 cons J1')
-    # #axes[0].plot(rat100P1.keys(), rat100P1.values(), label='rat100 Cons J1')
-    # axes[0].set_xlabel('Beta')
-    # axes[0].set_ylabel('Tax')
-    # axes[0].legend()
-
-    # #axes[1].plot(rat1P2.keys(), rat1P2.values(), label='rat1 Cons J2')
-    # axes[1].plot(rat5P2.keys(), rat5P2.values(), label='rat5 cons J2')
-    # axes[1].plot(rat10P2.keys(), rat10P2.values(), label='rat10 cons J2')
-    # #axes[1].plot(rat100P2.keys(), rat100P2.values(), label='rat100 Cons J2')
-    # axes[1].set_xlabel('Beta')
-    # axes[1].set_ylabel('Tax')
-    # axes[1].legend()
-
-    # plt.tight_layout()
+    # plt.legend(fontsize=11)
+    # #plt.savefig('D:/tijn2/CS/thesis/result figures/in thesis/min tax alpha/PROD j2, bg=0.1, j1200C300P, adopt=0.5,dpi=500.png', dpi=500)
     # plt.show()
 
 
 
 
-    ################### MIN tax for adoption with STD
+
+    #### MIN tax for adoption with STD. Another check for correctness of parallel code
 
     # beta_values = np.linspace(0,1,num=11)
     # alpha_values = np.linspace(0,1,num=11)
@@ -2093,7 +2196,7 @@ if __name__ == "__main__":
 
 
 
-# PHASE DIAGRAM FOR INITIAL CONDITIONS
+#PHASE DIAGRAM FOR INITIAL CONDITIONS
     # j1_vals = np.linspace(0,0.5,10)
     # j2_vals = np.linspace(0,0.5,10)
     
@@ -2103,13 +2206,13 @@ if __name__ == "__main__":
     #     for j, j2_val in enumerate(j2_vals):
     #         results_J2P = []
     #         for k in range(10):  
-    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0, gamma=0, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
-    #                                  tax=0, intensity_c=10, intensity_p=10, init_c1=j1_val, init_c2= 1-j2_val, init_p1=j1_val, init_p2=1-j2_val)
-    #             for l in range(200):  
+    #             model = Jurisdiction(n_consumers=500, n_producers=500, alpha=0, beta=0.3, gamma=0.3, cost_brown=0.25, cost_green=0.45, ext_brown=0.1, ext_green=0.3, 
+    #                                  tax=0.2, intensity_c=10, intensity_p=10, init_c1=j1_val, init_c2= 1-j2_val, init_p1=j1_val, init_p2=1-j2_val)
+    #             for l in range(100):  
     #                 model.step()
 
     #             model_data =  model.datacollector.get_model_vars_dataframe()
-    #             results_J2P.append(model_data['Percentage green Producers J1'].iloc[-1])
+    #             results_J2P.append(model_data['Percentage green Producers J2'].iloc[-1])
 
     #         adoption_J2P[j,i] = np.mean(results_J2P)
 
@@ -2117,11 +2220,23 @@ if __name__ == "__main__":
 
     # plt.imshow(adoption_J2P, cmap='gray_r', extent=[min(j1_vals), max(j1_vals), min(j2_vals), max(j2_vals)],
     #            vmin=0, vmax=1)
-    # plt.xticks(ticks=plt.xticks()[0], labels=[f'{2*x:.1f}' for x in plt.xticks()[0]])
-    # plt.yticks(ticks=plt.yticks()[0], labels=[f'{2*y:.1f}' for y in plt.yticks()[0]])
-    # plt.xlabel('J1')
-    # plt.ylabel('J2')
+    # plt.xticks(ticks=plt.xticks()[0], labels=[f'{2*x:.1f}' for x in plt.xticks()[0]], fontsize=11)
+    # plt.yticks(ticks=plt.yticks()[0], labels=[f'{2*y:.1f}' for y in plt.yticks()[0]],fontsize=11)
+    # plt.xlabel('J1', fontsize=16)
+    # plt.ylabel('J2', fontsize=16)
+
+            
+    # plt.annotate('', xy=(0, 0), xytext=(0.1, 0.45), arrowprops=dict(facecolor='red', edgecolor='red', arrowstyle='->', lw=4))
+    # plt.annotate('', xy=(0, 0), xytext=(0.15, 0.25), arrowprops=dict(facecolor='red', edgecolor='red', arrowstyle='->', lw=4))
+    # plt.annotate('', xy=(0, 0), xytext=(0.15, 0.05), arrowprops=dict(facecolor='red', edgecolor='red', arrowstyle='->', lw=4))
+             
+    # plt.annotate('', xy=(0.5, 0.5), xytext=(0.3, 0.45), arrowprops=dict(facecolor='red', edgecolor='red', arrowstyle='->', lw=4))
+    # plt.annotate('', xy=(0.5, 0.5), xytext=(0.25, 0.35), arrowprops=dict(facecolor='red', edgecolor='red', arrowstyle='->', lw=4))
+    # plt.annotate('', xy=(0.5, 0.5), xytext=(0.35, 0.05), arrowprops=dict(facecolor='red', edgecolor='red', arrowstyle='->', lw=4))
+
+    #plt.tight_layout()
+    #ax.set_xlim(0, 1)
+     #ax.set_ylim(0, 1)
+    #plt.show()
   
-    # plt.tight_layout()
-    # plt.show()  
 

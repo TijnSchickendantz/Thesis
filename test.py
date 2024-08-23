@@ -92,31 +92,33 @@ import networkx as nx
 
 #print((1 + np.exp(-20 * 0.2)) ** - 1)
 
-def sigmoid_function(av_payoff, rat):
-    return (1 + np.exp(-rat * av_payoff)) ** -1
+# def sigmoid_function(av_payoff, rat):
+#     return (1 + np.exp(-rat * av_payoff)) ** -1
 
-# # Generate x values (av_payoff) from -1 to 1
-x_values = np.linspace(-1, 1, 100)
+# # # Generate x values (av_payoff) from -1 to 1
+# x_values = np.linspace(-1, 1, 100)
 
-# Values of rat
-rat_values = [1, 10, 100]
+# # Values of rat
+# rat_values = [1, 10, 100]
 
-# Create the plot
-plt.figure(figsize=(6, 4))
+# # Create the plot
+# plt.figure(figsize=(6, 4))
 
-# Plot the function for each value of rat
-for rat in rat_values:
-    y_values = sigmoid_function(x_values, rat)
-    plt.plot(x_values, y_values, label=f'$r$ = {rat}')
+# # Plot the function for each value of rat
+# for rat in rat_values:
+#     y_values = sigmoid_function(x_values, rat)
+#     plt.plot(x_values, y_values, label=f'$r$ = {rat}')
 
-# Add labels and legend
-#plt.title('Sigmoid Function for Different Values of rat')
-plt.xlabel('payoff difference')
-plt.ylabel('Probability of switching')
-plt.legend()
-#plt.grid(True)
-plt.show()
+# # Add labels and legend
+# #plt.title('Sigmoid Function for Different Values of rat')
+# plt.xlabel('payoff difference')
+# plt.ylabel('Probability of switching')
+# plt.legend()
+# #plt.grid(True)
+# plt.show()
 
+
+print((1 + np.exp(-1 * -0.5)) ** -1)
 
 # rat5C = dict()
 # numbs = [1,2,2,3]
