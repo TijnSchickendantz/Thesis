@@ -117,8 +117,9 @@ import networkx as nx
 # #plt.grid(True)
 # plt.show()
 
+print(np.linspace(0,0.2,11))
 
-print((1 + np.exp(-1 * -0.5)) ** -1)
+#print((1 + np.exp(-1 * -0.5)) ** -1)
 
 # rat5C = dict()
 # numbs = [1,2,2,3]
